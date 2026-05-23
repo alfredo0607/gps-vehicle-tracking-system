@@ -1,0 +1,18 @@
+# Configuración GPS 863238073517528
+# AWS IoT Endpoint
+ENDPOINT=a28bbd2b4768x7-ats.iot.us-east-1.amazonaws.com
+PORT=8883
+THING_NAME=863238073517528
+DEVICE_ID=863238073517528
+
+# Archivos de certificados
+CERTIFICATE=certificate.pem.crt
+PRIVATE_KEY=private.pem.key
+PUBLIC_KEY=public.pem.key
+ROOT_CA=AmazonRootCA1.pem
+
+# MQTT Topic
+TOPIC=vehicles/863238073517528/data
+
+# Configuración Teltonika
+REPORT_INTERVAL=10
