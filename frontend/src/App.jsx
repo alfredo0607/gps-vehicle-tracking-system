@@ -18,6 +18,8 @@ import DashboardTwo from "./features/dashboard/DashboardTwo";
 
 const ADMIN_ONLY = ["ADMIN"];
 
+// Hola mundo
+
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated, token, user } = useSelector((state) => state.auth);
