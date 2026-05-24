@@ -25,11 +25,7 @@ let simulationStats = {
 
 async function syncGPSStatus(online) {
   try {
-    console.log(`[Simulation] Sincronizando estado GPS`);
-
     const gps = await gpsService.getGPSByDeviceId(DEVICE_ID);
-
-    console.log(`[Simulation] Sincronizando estado GPS`, gps);
 
     if (!gps) {
       console.log(`[Simulation] No GPS found with deviceId ${DEVICE_ID}`);
