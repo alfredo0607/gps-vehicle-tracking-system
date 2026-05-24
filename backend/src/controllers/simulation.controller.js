@@ -72,19 +72,12 @@ const start = async (req, res) => {
     const scriptPath = path.resolve(__dirname, '../../scripts/test-gps-simulation.js');
     const scriptDir = path.resolve(__dirname, '../../scripts');
 
-    console.log('Script path:', scriptPath); // ¿existe esta ruta?
-    console.log('Node path:', process.execPath); // ¿cuál node está usando?
-
     simulationProcess = spawn('node', [scriptPath], {
       cwd: scriptDir,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    console.log('Simulation process started with PID:', simulationProcess.pid);
-
     const autoStopAt = new Date(Date.now() + AUTO_STOP_MS).toISOString();
-
-    console.log('Auto-stop programado para:', autoStopAt);
 
     simulationStats = {
       running: true,
@@ -98,7 +91,7 @@ const start = async (req, res) => {
     console.log('Simulation stats initialized:', simulationStats);
 
     // Poner GPS online + en movimiento inmediatamente
-    await syncGPSStatus(true);
+    // await syncGPSStatus(true);
 
     console.log('paso syncGPSStatus:');
 
@@ -156,7 +149,7 @@ const stop = async (req, res) => {
 
   killProcess();
   simulationProcess = null;
-  await syncGPSStatus(false);
+  // await syncGPSStatus(false);
 
   return response.success(res, { ...simulationStats }, 'Simulación detenida correctamente');
 };
