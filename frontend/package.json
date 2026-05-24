@@ -13,10 +13,7 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.0.0",
-    "@aws-sdk/client-cognito-identity": "^3.1053.0",
     "@aws-sdk/client-location": "^3.470.0",
-    "@aws-sdk/credential-provider-web-identity": "^3.972.43",
-    "@aws-sdk/credential-providers": "^3.1053.0",
     "@aws/amazon-location-utilities-auth-helper": "^1.2.5",
     "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "^2.11.2",
