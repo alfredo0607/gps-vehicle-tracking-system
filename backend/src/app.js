@@ -6,7 +6,7 @@ const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const config = require('./config');
-// const logger = require('./utils/logger');
+const logger = require('./utils/logger');
 const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
@@ -43,11 +43,11 @@ app.use(compression());
 if (config.env === 'development') {
   app.use(morgan('dev'));
 } else {
-  // app.use(
-  //   morgan('combined', {
-  //     stream: { write: (message) => logger.info(message.trim()) },
-  //   })
-  // );
+  app.use(
+    morgan('combined', {
+      stream: { write: (message) => logger.info(message.trim()) },
+    })
+  );
 }
 
 // ============================================

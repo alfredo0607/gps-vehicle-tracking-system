@@ -11,8 +11,8 @@ const AUTO_STOP_MS = 60 * 60 * 1000;
 const DEVICE_ID = '1130267052';
 
 let simulationProcess = null;
-let autoStopTimer     = null;
-let simulationStats   = {
+let autoStopTimer = null;
+let simulationStats = {
   running: false,
   startTime: null,
   messageCount: 0,
@@ -32,7 +32,7 @@ async function syncGPSStatus(online) {
     }
     await gpsService.updateGPS(gps.gpsId, {
       online,
-      lastSpeed: online ? 30 : 0,   // >5 km/h → aparece como "en movimiento" en el mapa
+      lastSpeed: online ? 30 : 0, // >5 km/h → aparece como "en movimiento" en el mapa
       lastUpdate: new Date().toISOString(),
     });
     logger.info(`[Simulation] GPS ${DEVICE_ID} → ${online ? 'online / moving' : 'offline'}`);
@@ -49,8 +49,8 @@ function killProcess() {
   if (simulationProcess && simulationProcess.exitCode === null) {
     simulationProcess.kill();
   }
-  simulationStats.running  = false;
-  simulationStats.pid      = null;
+  simulationStats.running = false;
+  simulationStats.pid = null;
   simulationStats.autoStopAt = null;
 }
 
@@ -63,7 +63,7 @@ const start = async (req, res) => {
 
   try {
     const scriptPath = path.resolve(__dirname, '../../scripts/test-gps-simulation.js');
-    const scriptDir  = path.resolve(__dirname, '../../scripts');
+    const scriptDir = path.resolve(__dirname, '../../scripts');
 
     simulationProcess = spawn('node', [scriptPath], {
       cwd: scriptDir,
@@ -93,11 +93,11 @@ const start = async (req, res) => {
     }, AUTO_STOP_MS);
 
     simulationProcess.stdout.on('data', (data) => {
-      const text  = data.toString();
+      const text = data.toString();
       const match = text.match(/Mensaje #(\d+)/);
       if (match) {
         simulationStats.messageCount = parseInt(match[1], 10);
-        simulationStats.lastMessage  = new Date().toISOString();
+        simulationStats.lastMessage = new Date().toISOString();
       }
       logger.info(`[Simulation] ${text.trim()}`);
     });
@@ -112,10 +112,10 @@ const start = async (req, res) => {
         clearTimeout(autoStopTimer);
         autoStopTimer = null;
       }
-      simulationStats.running    = false;
-      simulationStats.pid        = null;
+      simulationStats.running = false;
+      simulationStats.pid = null;
       simulationStats.autoStopAt = null;
-      simulationProcess          = null;
+      simulationProcess = null;
       await syncGPSStatus(false);
       logger.info(`[Simulation] Proceso terminado con código ${code}`);
     });
