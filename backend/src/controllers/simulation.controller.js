@@ -27,8 +27,10 @@ async function syncGPSStatus(online) {
   try {
     const gps = await gpsService.getGPSByDeviceId(DEVICE_ID);
 
+    console.log(`[Simulation] Sincronizando estado GPS`, gps);
+
     if (!gps) {
-      console.warn(`[Simulation] No GPS found with deviceId ${DEVICE_ID}`);
+      console.log(`[Simulation] No GPS found with deviceId ${DEVICE_ID}`);
       logger.warn(`[Simulation] No se encontró GPS con deviceId ${DEVICE_ID}`);
       return;
     }
@@ -39,7 +41,7 @@ async function syncGPSStatus(online) {
     });
     logger.info(`[Simulation] GPS ${DEVICE_ID} → ${online ? 'online / moving' : 'offline'}`);
   } catch (err) {
-    console.error(`[Simulation] Error sincronizando estado GPS: ${err.message}`);
+    console.log(`[Simulation] Error sincronizando estado GPS: ${err.message}`);
     logger.error(`[Simulation] Error sincronizando estado GPS: ${err.message}`);
   }
 }
