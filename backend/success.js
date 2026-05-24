@@ -9,7 +9,7 @@ const TABLE_COORDENADAS = "Coordenadas";
 
 exports.handler = async (event) => {
 
-  console.log(event);
+
   
 
   console.log("📡 Evento recibido:", JSON.stringify(event, null, 2));

@@ -9,6 +9,7 @@ const coordinateRoutes = require("./coordinates.routes");
 const certificateRoutes = require("./certificates.routes");
 const authRoutes = require("./auth.routes");
 const commandRoutes = require("./commands.routes");
+const simulationRoutes = require("./simulation.routes");
 
 // API Info
 router.get("/", (req, res) => {
@@ -37,5 +38,6 @@ router.use("/gps", gpsRoutes);
 router.use("/coordinates", coordinateRoutes);
 router.use("/certificates", certificateRoutes);
 router.use("/commands", commandRoutes);
+router.use("/simulation", simulationRoutes);
 
 module.exports = router;

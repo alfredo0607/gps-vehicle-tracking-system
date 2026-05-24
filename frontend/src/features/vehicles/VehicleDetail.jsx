@@ -4,12 +4,14 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { fetchVehicleById, clearCurrentVehicle } from './vehiclesSlice'
 import { ArrowLeft, Edit, MapPin, Calendar, Gauge } from 'lucide-react'
 import LoadingSpinner from '@/shared/components/LoadingSpinner'
+import { useRole } from '@/features/auth/useRole'
 
 export default function VehicleDetail() {
   const { id } = useParams()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { currentVehicle, loading } = useSelector((state) => state.vehicles)
+  const { isAdmin } = useRole()
 
   useEffect(() => {
     dispatch(fetchVehicleById(id))
@@ -33,7 +35,7 @@ export default function VehicleDetail() {
 
       <div className="bg-white rounded-lg shadow">
         {/* Header */}
-        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-6 rounded-t-lg">
+        <div className="bg-linear-to-r from-brand-600 to-brand-700 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold">{currentVehicle.plate}</h1>
@@ -42,13 +44,15 @@ export default function VehicleDetail() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Link
-                to={`/vehicles/${id}/edit`}
-                className="bg-white text-brand-600 px-4 py-2 rounded-lg hover:bg-brand-50 transition flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Editar
-              </Link>
+              {isAdmin && (
+                <Link
+                  to={`/vehicles/${id}/edit`}
+                  className="bg-white text-brand-600 px-4 py-2 rounded-lg hover:bg-brand-50 transition flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Editar
+                </Link>
+              )}
               {currentVehicle.gpsId && (
                 <Link
                   to={`/tracking/history/${id}`}
@@ -166,12 +170,14 @@ export default function VehicleDetail() {
               ) : (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <p className="text-sm text-gray-600">No hay GPS asignado</p>
-                  <Link
-                    to="/gps/new"
-                    className="text-sm text-brand-600 hover:text-brand-700 font-medium mt-2 inline-block"
-                  >
-                    Asignar GPS →
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/gps/new"
+                      className="text-sm text-brand-600 hover:text-brand-700 font-medium mt-2 inline-block"
+                    >
+                      Asignar GPS →
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

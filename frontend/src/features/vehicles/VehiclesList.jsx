@@ -5,10 +5,12 @@ import { fetchVehicles, deleteVehicle } from "./vehiclesSlice";
 import { Plus, Edit, Trash2, MapPin, Search } from "lucide-react";
 import LoadingSpinner from "@/shared/components/LoadingSpinner";
 import ConfirmDialog from "@/shared/components/ConfirmDialog";
+import { useRole } from "@/features/auth/useRole";
 
 export default function VehiclesList() {
   const dispatch = useDispatch();
   const { vehicles, loading } = useSelector((state) => state.vehicles);
+  const { isAdmin } = useRole();
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState(null);
 
@@ -40,13 +42,15 @@ export default function VehiclesList() {
           <h1 className="text-3xl font-bold text-gray-900">Vehículos</h1>
           <p className="text-gray-600 mt-1">Gestiona tu flota de vehículos</p>
         </div>
-        <Link
-          to="/vehicles/new"
-          className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Nuevo Vehículo
-        </Link>
+        {isAdmin && (
+          <Link
+            to="/vehicles/new"
+            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Nuevo Vehículo
+          </Link>
+        )}
       </div>
 
       {/* Search */}
@@ -135,18 +139,22 @@ export default function VehiclesList() {
                   >
                     Ver
                   </Link>
-                  <Link
-                    to={`/vehicles/${vehicle.vehicleId}/edit`}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    <Edit className="w-4 h-4 inline" />
-                  </Link>
-                  <button
-                    onClick={() => setDeleteId(vehicle.vehicleId)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="w-4 h-4 inline" />
-                  </button>
+                  {isAdmin && (
+                    <>
+                      <Link
+                        to={`/vehicles/${vehicle.vehicleId}/edit`}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        <Edit className="w-4 h-4 inline" />
+                      </Link>
+                      <button
+                        onClick={() => setDeleteId(vehicle.vehicleId)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 className="w-4 h-4 inline" />
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

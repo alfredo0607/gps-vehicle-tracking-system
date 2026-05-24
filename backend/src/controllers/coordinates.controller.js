@@ -12,6 +12,8 @@ exports.getCurrentPosition = async (req, res, next) => {
     const { gpsId } = req.params;
 
     const gps = await gpsService.getGPSById(gpsId);
+
+    
     if (!gps) {
       return response.error(res, "GPS no encontrado", 404);
     }

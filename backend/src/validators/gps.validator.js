@@ -6,7 +6,7 @@ exports.gpsValidation = {
     model: Joi.string().required().max(50),
     imei: Joi.string()
       .required()
-      .length(15)
+      .length(10)
       .pattern(/^[0-9]+$/),
     simNumber: Joi.string()
       .required()

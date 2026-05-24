@@ -6,7 +6,7 @@ export const gpsSchema = yup.object({
   imei: yup
     .string()
     .required("IMEI requerido")
-    .matches(/^[0-9]{15}$/, "IMEI debe tener 15 dígitos"),
+    .matches(/^[0-9]{10}$/, "IMEI debe tener 10 dígitos"),
   simNumber: yup
     .string()
     .required("Número SIM requerido")

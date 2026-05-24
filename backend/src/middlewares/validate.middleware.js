@@ -1,4 +1,4 @@
-const response = require("../utils/response");
+const response = require('../utils/response');
 
 /**
  * Middleware de validación con Joi
@@ -12,11 +12,11 @@ exports.validate = (schema) => {
 
     if (error) {
       const errors = error.details.map((detail) => ({
-        field: detail.path.join("."),
+        field: detail.path.join('.'),
         message: detail.message,
       }));
 
-      return response.error(res, "Error de validación", 400, errors);
+      return response.error(res, 'Error de validación', 400, errors);
     }
 
     req.body = value;

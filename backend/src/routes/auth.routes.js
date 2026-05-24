@@ -1,29 +1,22 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/auth.controller');
+const { verifyToken } = require('../middlewares/auth.middleware');
+const { loginSchema } = require('../validators/auth.validator');
+const { validate } = require('../middlewares/validate.middleware');
 
 /**
  * @route   POST /api/auth/login
- * @desc    Login (Placeholder)
+ * @desc    Inicia sesión y devuelve JWT + datos del usuario
  * @access  Public
  */
-router.post("/login", (req, res) => {
-  res.json({
-    success: true,
-    message: "Login endpoint - Implementar autenticación JWT",
-    token: "placeholder-token",
-  });
-});
+router.post('/login', validate(loginSchema), authController.login);
 
 /**
- * @route   POST /api/auth/register
- * @desc    Register (Placeholder)
- * @access  Public
+ * @route   GET /api/auth/me
+ * @desc    Devuelve los datos del usuario autenticado
+ * @access  Private
  */
-router.post("/register", (req, res) => {
-  res.json({
-    success: true,
-    message: "Register endpoint - Implementar registro de usuarios",
-  });
-});
+router.get('/me', verifyToken, authController.me);
 
 module.exports = router;

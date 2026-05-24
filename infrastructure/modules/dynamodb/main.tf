@@ -40,6 +40,13 @@ resource "aws_dynamodb_table" "gps" {
     hash_key        = "deviceId"
     projection_type = "ALL"
   }
+
+
+  global_secondary_index {
+    name            = "vehicleId-index"
+    hash_key        = "vehicleId"
+    projection_type = "ALL"
+  }
 }
 
 resource "aws_dynamodb_table" "vehiculos" {
@@ -50,6 +57,12 @@ resource "aws_dynamodb_table" "vehiculos" {
   attribute {
     name = "vehicleId"
     type = "S"
+  }
+
+  global_secondary_index {
+    name            = "plate-index"
+    hash_key        = "plate"
+    projection_type = "ALL"
   }
 }
 

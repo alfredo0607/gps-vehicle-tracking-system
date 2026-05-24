@@ -14,6 +14,9 @@ export const fetchCurrentPosition = createAsyncThunk(
   async (gpsId, { rejectWithValue }) => {
     try {
       const response = await coordinatesAPI.getCurrent(gpsId);
+
+      console.log("Current position response:", response.data);
+
       return { gpsId, data: response.data.data };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message);

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector,  } from "react-redux";
 import { fetchVehicles } from "../vehicles/vehiclesSlice";
 import { fetchGPSList } from "../gps/gpsSlice";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { MapPin, Navigation, Activity, RefreshCw } from "lucide-react";
+import { MapPin, Navigation, Activity, RefreshCw, Radio } from "lucide-react";
 import { Link } from "react-router-dom";
+import SimulationModal from "../simulation/SimulationModal";
 import { withIdentityPoolId } from "@aws/amazon-location-utilities-auth-helper";
 import { getMapStyleUrl } from "../../shared/services/aws/locationService";
 
@@ -19,6 +20,8 @@ export default function LiveMap() {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [showSimulation, setShowSimulation] = useState(false);
+  const { running: simRunning } = useSelector((state) => state.simulation);
   const initialFitDone = useRef(false); // ✅ NUEVO: Bandera para controlar el fitBounds inicial
   const userInteracted = useRef(false); // ✅ NUEVO: Detectar si el usuario movió el mapa
 
@@ -326,7 +329,6 @@ export default function LiveMap() {
             Estado de la Flota
           </h3>
           <div className="flex gap-2">
-            {/* ✅ NUEVO: Botón para resetear vista */}
             <button
               onClick={handleResetView}
               className="p-1 hover:bg-gray-100 rounded transition"
@@ -373,6 +375,19 @@ export default function LiveMap() {
               No hay GPS con posición disponible
             </div>
           )}
+
+        {/* Botón simulación */}
+        <button
+          onClick={() => setShowSimulation(true)}
+          className={`mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition ${
+            simRunning
+              ? "bg-green-50 border border-green-300 text-green-700 hover:bg-green-100"
+              : "bg-brand-600 text-white hover:bg-brand-700"
+          }`}
+        >
+          <Radio className={`w-4 h-4 ${simRunning ? "animate-pulse" : ""}`} />
+          {simRunning ? "Simulación activa" : "Simulación GPS"}
+        </button>
       </div>
 
       {/* Vehicle Details Panel */}
@@ -455,6 +470,12 @@ export default function LiveMap() {
           }
         }
       `}</style>
+
+      {/* Modal de simulación */}
+      <SimulationModal
+        isOpen={showSimulation}
+        onClose={() => setShowSimulation(false)}
+      />
     </div>
   );
 }

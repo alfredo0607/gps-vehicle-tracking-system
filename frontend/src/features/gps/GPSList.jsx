@@ -5,12 +5,14 @@ import { fetchGPSList, deleteGPS } from './gpsSlice'
 import { Plus, Edit, Trash2, Activity, AlertCircle, Search } from 'lucide-react'
 import LoadingSpinner from '@/shared/components/LoadingSpinner'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
+import { useRole } from '@/features/auth/useRole'
 
 export default function GPSList() {
   const dispatch = useDispatch()
   const { gpsList, loading } = useSelector((state) => state.gps)
   const [search, setSearch] = useState('')
   const [deleteId, setDeleteId] = useState(null)
+  const { isAdmin } = useRole()
 
   useEffect(() => {
     dispatch(fetchGPSList())
@@ -39,13 +41,15 @@ export default function GPSList() {
           <h1 className="text-3xl font-bold text-gray-900">Dispositivos GPS</h1>
           <p className="text-gray-600 mt-1">Gestiona los GPS de tu flota</p>
         </div>
-        <Link
-          to="/gps/new"
-          className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Nuevo GPS
-        </Link>
+        {isAdmin && (
+          <Link
+            to="/gps/new"
+            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Nuevo GPS
+          </Link>
+        )}
       </div>
 
       <div className="mb-6">
@@ -128,18 +132,22 @@ export default function GPSList() {
                   <Link to={`/gps/${gps.gpsId}`} className="text-brand-600 hover:text-brand-900 mr-4">
                     Ver
                   </Link>
-                  <Link
-                    to={`/gps/${gps.gpsId}/edit`}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    <Edit className="w-4 h-4 inline" />
-                  </Link>
-                  <button
-                    onClick={() => setDeleteId(gps.gpsId)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="w-4 h-4 inline" />
-                  </button>
+                  {isAdmin && (
+                    <>
+                      <Link
+                        to={`/gps/${gps.gpsId}/edit`}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        <Edit className="w-4 h-4 inline" />
+                      </Link>
+                      <button
+                        onClick={() => setDeleteId(gps.gpsId)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 className="w-4 h-4 inline" />
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

@@ -53,6 +53,11 @@
 7. **Auto-generate a new certificate**
 8. **Attach policy**: `VehicleGPSPolicy`
 9. **Create thing**
+
+# Después de ejecutar `terraform apply`, crea un certificado manualmente en la consola de AWS.
+
+# Adjunta la policy la `VehicleGPSPolicy` al certificate y descarga el certificado y la clave privada para el dispositivo GPS.
+
 10. **Descargar certificados**:
     - Device certificate
     - Private key

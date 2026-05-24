@@ -104,7 +104,7 @@ export const getDeviceHistory = async (deviceId, maxResults = 100) => {
 
     const response = await client.send(command);
 
-    console.log(response);
+
 
     return (response.DevicePositions || []).map((pos) => ({
       position: {

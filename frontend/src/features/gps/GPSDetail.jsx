@@ -15,6 +15,7 @@ import {
 import LoadingSpinner from "@/shared/components/LoadingSpinner";
 import CommandPanel from "@/features/commands/CommandPanel";
 import toast from "react-hot-toast";
+import { useRole } from "@/features/auth/useRole";
 
 export default function GPSDetail() {
   const { id } = useParams();
@@ -22,7 +23,8 @@ export default function GPSDetail() {
   const navigate = useNavigate();
   const { currentGPS, loading } = useSelector((state) => state.gps);
   const [downloadingCerts, setDownloadingCerts] = useState(false);
-  const [activeTab, setActiveTab] = useState("info"); // ✅ NUEVO: tabs
+  const [activeTab, setActiveTab] = useState("info");
+  const { isAdmin } = useRole();
 
   useEffect(() => {
     dispatch(fetchGPSById(id));
@@ -67,7 +69,7 @@ export default function GPSDetail() {
 
       <div className="bg-white rounded-lg shadow">
         {/* Header */}
-        <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-6 rounded-t-lg">
+        <div className="bg-linear-to-r from-brand-600 to-brand-700 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -88,23 +90,25 @@ export default function GPSDetail() {
                 {currentGPS.brand} {currentGPS.model}
               </p>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleDownloadCertificates}
-                disabled={downloadingCerts}
-                className="bg-white text-brand-600 px-4 py-2 rounded-lg hover:bg-brand-50 transition flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                {downloadingCerts ? "Descargando..." : "Certificados"}
-              </button>
-              <Link
-                to={`/gps/${id}/edit`}
-                className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-400 transition flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Editar
-              </Link>
-            </div>
+            {isAdmin && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownloadCertificates}
+                  disabled={downloadingCerts}
+                  className="bg-white text-brand-600 px-4 py-2 rounded-lg hover:bg-brand-50 transition flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloadingCerts ? "Descargando..." : "Certificados"}
+                </button>
+                <Link
+                  to={`/gps/${id}/edit`}
+                  className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-400 transition flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Editar
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -204,7 +208,7 @@ export default function GPSDetail() {
                     <dt className="text-sm font-medium text-gray-500">
                       Certificate ID
                     </dt>
-                    <dd className="mt-1 text-sm text-gray-900 font-mono text-xs">
+                    <dd className="mt-1 text-xs text-gray-900 font-mono">
                       {currentGPS.iotCertificateId?.substring(0, 20)}...
                     </dd>
                   </div>

@@ -29,13 +29,17 @@ api.interceptors.response.use(
     const message =
       error.response?.data?.message || error.message || "Error desconocido";
 
-    if (error.response?.status !== 401) {
-      toast.error(message);
-    }
+    const isLoginEndpoint = error.config?.url?.includes("/auth/login");
 
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      if (!isLoginEndpoint) {
+        // Token expirado en ruta protegida → cerrar sesión
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
+      // Si es el endpoint de login, el authSlice maneja el error con toast.error
+    } else {
+      toast.error(message);
     }
 
     return Promise.reject(error);
@@ -99,6 +103,13 @@ export const commandsAPI = {
   send: (gpsId, data) => api.post(`/commands/${gpsId}/send`, data),
   getHistory: (gpsId) => api.get(`/commands/${gpsId}/history`),
   getStatus: (commandId) => api.get(`/commands/status/${commandId}`),
+};
+
+// SIMULATION
+export const simulationAPI = {
+  start: () => api.post("/simulation/start"),
+  stop: () => api.post("/simulation/stop"),
+  status: () => api.get("/simulation/status"),
 };
 
 export default api;
