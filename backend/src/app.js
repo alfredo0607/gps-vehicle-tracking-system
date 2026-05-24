@@ -11,6 +11,8 @@ const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // ============================================
 // MIDDLEWARES DE SEGURIDAD
 // ============================================
