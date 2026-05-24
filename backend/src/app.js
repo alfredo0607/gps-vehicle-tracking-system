@@ -6,7 +6,7 @@ const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const config = require('./config');
-const logger = require('./utils/logger');
+// const logger = require('./utils/logger');
 const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
