@@ -41,11 +41,11 @@ app.use(compression());
 if (config.env === 'development') {
   app.use(morgan('dev'));
 } else {
-  app.use(
-    morgan('combined', {
-      stream: { write: (message) => logger.info(message.trim()) },
-    })
-  );
+  // app.use(
+  //   morgan('combined', {
+  //     stream: { write: (message) => logger.info(message.trim()) },
+  //   })
+  // );
 }
 
 // ============================================
