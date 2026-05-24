@@ -15,6 +15,7 @@ const awsConfig = {
 
 // DynamoDB
 const dynamoClient = new DynamoDBClient(awsConfig);
+
 const docClient = DynamoDBDocumentClient.from(dynamoClient, {
   marshallOptions: {
     removeUndefinedValues: true,

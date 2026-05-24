@@ -81,20 +81,15 @@ exports.getGPSById = async (gpsId) => {
  * Obtener GPS por deviceId
  */
 exports.getGPSByDeviceId = async (deviceId) => {
-  console.log(`[GPS Service] Buscando GPS con deviceId ${deviceId}`);
-
   const result = await docClient.send(
-    new QueryCommand({
+    new ScanCommand({
       TableName: TABLE,
-      IndexName: 'deviceId-index',
-      KeyConditionExpression: 'deviceId = :deviceId',
+      FilterExpression: 'deviceId = :deviceId',
       ExpressionAttributeValues: {
         ':deviceId': deviceId,
       },
     })
   );
-
-  console.log(`[GPS Service] Resultado para deviceId ${deviceId}:`, result);
 
   return result.Items?.[0];
 };
@@ -104,10 +99,9 @@ exports.getGPSByDeviceId = async (deviceId) => {
  */
 exports.getGPSByVehicle = async (vehicleId) => {
   const result = await docClient.send(
-    new QueryCommand({
+    new ScanCommand({
       TableName: TABLE,
-      IndexName: 'vehicleId-index',
-      KeyConditionExpression: 'vehicleId = :vehicleId',
+      FilterExpression: 'vehicleId = :vehicleId',
       ExpressionAttributeValues: {
         ':vehicleId': vehicleId,
       },
