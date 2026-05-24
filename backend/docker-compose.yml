@@ -1,0 +1,9 @@
+services:
+  gps-vehicle-tracking-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3002:3002'
+    env_file:
+      - .env
