@@ -65,6 +65,9 @@ const start = async (req, res) => {
     const scriptPath = path.resolve(__dirname, '../../scripts/test-gps-simulation.js');
     const scriptDir = path.resolve(__dirname, '../../scripts');
 
+    console.log('Script path:', scriptPath); // ¿existe esta ruta?
+    console.log('Node path:', process.execPath); // ¿cuál node está usando?
+
     simulationProcess = spawn('node', [scriptPath], {
       cwd: scriptDir,
       stdio: ['ignore', 'pipe', 'pipe'],
