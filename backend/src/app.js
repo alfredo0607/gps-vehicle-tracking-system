@@ -11,6 +11,7 @@ const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
 
+
 // ============================================
 // MIDDLEWARES DE SEGURIDAD
 // ============================================
