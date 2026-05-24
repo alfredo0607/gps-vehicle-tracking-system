@@ -24,7 +24,10 @@ import {
 } from "recharts";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getMapStyleUrl } from "../../shared/services/aws/locationService";
+import {
+  createTransformRequest,
+  getMapStyleUrl,
+} from "../../shared/services/aws/locationService";
 import LoadingSpinner from "@/shared/components/LoadingSpinner";
 
 export default function VehicleHistory() {
