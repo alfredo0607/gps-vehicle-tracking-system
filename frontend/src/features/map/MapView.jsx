@@ -7,8 +7,10 @@ import {
 } from "@/shared/utils/vehicle";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./map.css";
-import { withIdentityPoolId } from "@aws/amazon-location-utilities-auth-helper";
-import { getMapStyleUrl } from "../../shared/services/aws/locationService";
+import {
+  createTransformRequest,
+  getMapStyleUrl,
+} from "../../shared/services/aws/locationService";
 
 export function MapView({ vehicles, selectedId, onVehicleClick }) {
   const mapRef = useRef(null);
@@ -23,17 +25,19 @@ export function MapView({ vehicles, selectedId, onVehicleClick }) {
 
       try {
         // 3️⃣ Crear mapa
-        const authHelper = await withIdentityPoolId(
-          import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
-          import.meta.env.VITE_AWS_REGION,
-        );
+        // const authHelper = await withIdentityPoolId(
+        //   import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
+        //   import.meta.env.VITE_AWS_REGION,
+        // );
+
+        const transformRequest = createTransformRequest();
 
         const map = new maplibregl.Map({
           container: mapRef.current,
           style: getMapStyleUrl(), // `https://maps.geo.${awsConfig.region}.amazonaws.com/maps/v0/maps/${mapName}/style-descriptor`;
           center: [0, 0],
           zoom: 2,
-          ...authHelper.getMapAuthenticationOptions(),
+          transformRequest,
         });
 
         map.addControl(new maplibregl.NavigationControl(), "top-right");
