@@ -19,7 +19,7 @@ const CONFIG = {
   topic: 'vehicles/1130267052/data',
 
   // Envío
-  intervalSeconds: 5,
+  intervalSeconds: 1,
 
   // ── RUTA ──────────────────────────────────
   // Cambia estas coordenadas para definir inicio y fin
