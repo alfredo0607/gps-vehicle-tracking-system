@@ -220,3 +220,13 @@ aws s3 sync dist/ s3://fleet-tracker-frontend --delete
 ```
 
 Para HTTPS y mejor rendimiento, crear una distribución CloudFront apuntando al bucket S3.
+
+
+## Generar build y Despliegue en CloudFlare
+
+```bash
+
+yarn run build
+
+npx wrangler pages deploy dist --project-name fleet-tracker-pro
+---
