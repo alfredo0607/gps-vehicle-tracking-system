@@ -1785,3 +1785,6 @@ Action: SNS notification
 **Autor:** Equipo Fleet Tracker
 
 ---
+
+npm run build
+npx wrangler pages deploy dist --project-name fleet-tracker-pro
