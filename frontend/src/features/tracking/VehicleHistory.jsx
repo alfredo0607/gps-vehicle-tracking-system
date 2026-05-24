@@ -24,7 +24,6 @@ import {
 } from "recharts";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { withIdentityPoolId } from "@aws/amazon-location-utilities-auth-helper";
 import { getMapStyleUrl } from "../../shared/services/aws/locationService";
 import LoadingSpinner from "@/shared/components/LoadingSpinner";
 
@@ -69,16 +68,18 @@ export default function VehicleHistory() {
 
     async function initMap() {
       try {
-        const authHelper = await withIdentityPoolId(
-          import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
-        );
+        // const authHelper = await withIdentityPoolId(
+        //   import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
+        // );
+
+        const transformRequest = createTransformRequest();
 
         const map = new maplibregl.Map({
           container: mapContainer.current,
           style: getMapStyleUrl(),
           center: [-74.7964, 10.9639],
           zoom: 12,
-          ...authHelper.getMapAuthenticationOptions(),
+          transformRequest,
         });
 
         map.addControl(new maplibregl.NavigationControl(), "top-right");

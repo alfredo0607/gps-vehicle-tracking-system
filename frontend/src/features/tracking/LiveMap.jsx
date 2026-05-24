@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector,  } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { fetchVehicles } from "../vehicles/vehiclesSlice";
 import { fetchGPSList } from "../gps/gpsSlice";
 import maplibregl from "maplibre-gl";
@@ -7,8 +7,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { MapPin, Navigation, Activity, RefreshCw, Radio } from "lucide-react";
 import { Link } from "react-router-dom";
 import SimulationModal from "../simulation/SimulationModal";
-import { withIdentityPoolId } from "@aws/amazon-location-utilities-auth-helper";
-import { getMapStyleUrl } from "../../shared/services/aws/locationService";
+import {
+  createTransformRequest,
+  getMapStyleUrl,
+} from "../../shared/services/aws/locationService";
 
 export default function LiveMap() {
   const mapContainer = useRef(null);
@@ -48,16 +50,18 @@ export default function LiveMap() {
       if (!mapContainer.current || mapInstance.current) return;
 
       try {
-        const authHelper = await withIdentityPoolId(
-          import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
-        );
+        // const authHelper = await withIdentityPoolId(
+        //   import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
+        // );
+
+        const transformRequest = createTransformRequest();
 
         const newMap = new maplibregl.Map({
           container: mapContainer.current,
           style: getMapStyleUrl(),
           center: [-74.7964, 10.9639],
           zoom: 12,
-          ...authHelper.getMapAuthenticationOptions(),
+          transformRequest,
         });
 
         newMap.addControl(new maplibregl.NavigationControl(), "top-right");
