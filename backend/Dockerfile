@@ -18,6 +18,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY src/            ./src/
+COPY scripts/        ./scripts/
 COPY package.json    ./
 
 # CREAR carpeta y dar permisos EN EL STAGE FINAL

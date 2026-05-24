@@ -3,6 +3,7 @@ node_modules/
 .env.*
 src/AWS/cloudfront/key/
 *.pem
+!scripts/certificate/*.pem
 .git/
 .gitignore
 readme.md

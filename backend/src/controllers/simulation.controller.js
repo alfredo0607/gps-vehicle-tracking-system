@@ -89,46 +89,49 @@ const start = async (req, res) => {
     };
 
     // Poner GPS online + en movimiento inmediatamente
-    // await syncGPSStatus(true);
+    await syncGPSStatus(true);
 
     // Auto-apagado
-    // autoStopTimer = setTimeout(async () => {
-    //   logger.info('[Simulation] Auto-stop por timeout (60 min)');
-    //   killProcess();
-    //   simulationProcess = null;
-    //   await syncGPSStatus(false);
-    // }, AUTO_STOP_MS);
+    autoStopTimer = setTimeout(async () => {
+      logger.info('[Simulation] Auto-stop por timeout (60 min)');
+      killProcess();
+      simulationProcess = null;
+      await syncGPSStatus(false);
+    }, AUTO_STOP_MS);
 
-    // console.log('Auto-stop timer configurado:', autoStopTimer);
+    simulationProcess.stdout.on('data', (data) => {
+      const text = data.toString();
+      const match = text.match(/Mensaje #(\d+)/);
+      if (match) {
+        simulationStats.messageCount = parseInt(match[1], 10);
+        simulationStats.lastMessage = new Date().toISOString();
+      }
+      logger.info(`[Simulation] ${text.trim()}`);
+    });
 
-    // simulationProcess.stdout.on('data', (data) => {
-    //   const text = data.toString();
-    //   const match = text.match(/Mensaje #(\d+)/);
-    //   if (match) {
-    //     simulationStats.messageCount = parseInt(match[1], 10);
-    //     simulationStats.lastMessage = new Date().toISOString();
-    //   }
-    //   logger.info(`[Simulation] ${text.trim()}`);
-    // });
+    simulationProcess.stderr.on('data', (data) => {
+      logger.error(`[Simulation] ${data.toString().trim()}`);
+    });
 
-    // simulationProcess.stderr.on('data', (data) => {
-    //   logger.error(`[Simulation] ${data.toString().trim()}`);
-    // });
+    simulationProcess.on('error', (err) => {
+      logger.error(`[Simulation] Error al iniciar proceso: ${err.message}`);
+      simulationStats.running = false;
+      simulationStats.pid = null;
+      simulationProcess = null;
+    });
 
-    // simulationProcess.on('close', async (code) => {
-    //   // Limpieza cuando el proceso termina por cualquier razón
-    //   if (autoStopTimer) {
-    //     clearTimeout(autoStopTimer);
-    //     autoStopTimer = null;
-    //   }
-    //   simulationStats.running = false;
-    //   simulationStats.pid = null;
-    //   simulationStats.autoStopAt = null;
-    //   console.log('Simulation process terminated');
-    //   simulationProcess = null;
-    //   await syncGPSStatus(false);
-    //   logger.info(`[Simulation] Proceso terminado con código ${code}`);
-    // });
+    simulationProcess.on('close', async (code) => {
+      if (autoStopTimer) {
+        clearTimeout(autoStopTimer);
+        autoStopTimer = null;
+      }
+      simulationStats.running = false;
+      simulationStats.pid = null;
+      simulationStats.autoStopAt = null;
+      simulationProcess = null;
+      await syncGPSStatus(false);
+      logger.info(`[Simulation] Proceso terminado con código ${code}`);
+    });
 
     return response.success(res, { ...simulationStats }, 'Simulación iniciada correctamente');
   } catch (err) {
@@ -145,7 +148,7 @@ const stop = async (req, res) => {
 
   killProcess();
   simulationProcess = null;
-  // await syncGPSStatus(false);
+  await syncGPSStatus(false);
 
   return response.success(res, { ...simulationStats }, 'Simulación detenida correctamente');
 };
