@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="http://localhost:5000"
+BASE_URL="http://localhost:3000"
 API_URL="$BASE_URL/api"
 
 # Helpers JSON con Node.js (no requiere jq)
