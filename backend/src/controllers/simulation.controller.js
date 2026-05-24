@@ -28,7 +28,6 @@ async function syncGPSStatus(online) {
     const gps = await gpsService.getGPSByDeviceId(DEVICE_ID);
 
     if (!gps) {
-      console.log(`[Simulation] No GPS found with deviceId ${DEVICE_ID}`);
       logger.warn(`[Simulation] No se encontró GPS con deviceId ${DEVICE_ID}`);
       return;
     }
