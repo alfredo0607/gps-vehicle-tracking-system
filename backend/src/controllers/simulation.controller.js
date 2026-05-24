@@ -122,6 +122,7 @@ const start = async (req, res) => {
 
     return response.success(res, { ...simulationStats }, 'Simulación iniciada correctamente');
   } catch (err) {
+    console.error(`[Simulation] Error al iniciar: ${err.message}`);
     logger.error('[Simulation] Error al iniciar:', err);
     return response.error(res, 'Error al iniciar la simulación', 500);
   }
