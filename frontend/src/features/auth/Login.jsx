@@ -29,6 +29,10 @@ export default function Login() {
     dispatch(login(data));
   };
 
+  const loginAsGuest = () => {
+    dispatch(login({ email: "invitado@gmail.com", password: "12345678" }));
+  };
+
   return (
     <div className="min-h-screen bg-brand-900 flex items-center justify-center p-4">
       <div className="bg-brand-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-gray-700">
@@ -83,6 +87,21 @@ export default function Login() {
             {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </button>
         </form>
+
+        <div className="mt-4">
+          <div className="relative flex items-center">
+            <div className="grow border-t border-gray-700"></div>
+            <span className="mx-3 text-xs text-gray-500 uppercase tracking-wide">o</span>
+            <div className="grow border-t border-gray-700"></div>
+          </div>
+          <button
+            onClick={loginAsGuest}
+            disabled={loading}
+            className="mt-4 w-full bg-transparent border border-gray-600 text-gray-300 py-3 rounded-lg font-medium hover:bg-brand-700 hover:border-gray-500 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Acceder como invitado (Demo)
+          </button>
+        </div>
       </div>
     </div>
   );
