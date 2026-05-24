@@ -110,11 +110,11 @@ export default function VehicleHistory() {
   }, [showMap]);
 
   // Redibujar ruta cuando cambien las coordenadas
-  useEffect(() => {
-    if (showMap && mapInstance.current && coordinates.length > 0) {
-      drawRoute(mapInstance.current);
-    }
-  }, [coordinates, showMap]);
+  // useEffect(() => {
+  //   if (showMap && mapInstance.current && coordinates.length > 0) {
+  //     drawRoute(mapInstance.current);
+  //   }
+  // }, [coordinates, showMap]);
 
   const drawRoute = (map) => {
     if (!map || coordinates.length === 0) return;
