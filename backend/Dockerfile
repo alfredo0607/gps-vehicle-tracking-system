@@ -7,7 +7,6 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# sharp descarga binarios precompilados para linux/x64 automáticamente
 RUN pnpm install --frozen-lockfile --prod
 
 # ── Stage 2: imagen final mínima ──────────────────────────────────────────
@@ -20,6 +19,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY src/            ./src/
 COPY package.json    ./
+
+# CREAR carpeta y dar permisos EN EL STAGE FINAL
+RUN mkdir -p /app/logs \
+    && chown -R app:app /app
 
 USER app
 
