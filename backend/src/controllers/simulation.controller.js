@@ -26,6 +26,7 @@ let simulationStats = {
 async function syncGPSStatus(online) {
   try {
     const gps = await gpsService.getGPSByDeviceId(DEVICE_ID);
+
     if (!gps) {
       logger.warn(`[Simulation] No se encontró GPS con deviceId ${DEVICE_ID}`);
       return;
@@ -91,7 +92,7 @@ const start = async (req, res) => {
     console.log('Simulation stats initialized:', simulationStats);
 
     // Poner GPS online + en movimiento inmediatamente
-    await syncGPSStatus(true);
+    // await syncGPSStatus(true);
 
     console.log('paso syncGPSStatus:');
 
@@ -100,7 +101,7 @@ const start = async (req, res) => {
       logger.info('[Simulation] Auto-stop por timeout (60 min)');
       killProcess();
       simulationProcess = null;
-      await syncGPSStatus(false);
+      // await syncGPSStatus(false);
     }, AUTO_STOP_MS);
 
     console.log('Auto-stop timer configurado:', autoStopTimer);
@@ -130,7 +131,7 @@ const start = async (req, res) => {
       simulationStats.autoStopAt = null;
       console.log('Simulation process terminated');
       simulationProcess = null;
-      await syncGPSStatus(false);
+      // await syncGPSStatus(false);
       logger.info(`[Simulation] Proceso terminado con código ${code}`);
     });
 
@@ -149,7 +150,7 @@ const stop = async (req, res) => {
 
   killProcess();
   simulationProcess = null;
-  await syncGPSStatus(false);
+  // await syncGPSStatus(false);
 
   return response.success(res, { ...simulationStats }, 'Simulación detenida correctamente');
 };

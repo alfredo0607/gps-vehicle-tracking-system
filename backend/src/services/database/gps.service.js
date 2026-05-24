@@ -5,10 +5,10 @@ const {
   DeleteCommand,
   QueryCommand,
   ScanCommand,
-} = require("@aws-sdk/lib-dynamodb");
-const { docClient } = require("../aws/clients");
-const config = require("../../config");
-const { v4: uuidv4 } = require("uuid");
+} = require('@aws-sdk/lib-dynamodb');
+const { docClient } = require('../aws/clients');
+const config = require('../../config');
+const { v4: uuidv4 } = require('uuid');
 
 const TABLE = config.tables.gps;
 
@@ -38,7 +38,7 @@ exports.createGPS = async (gpsData) => {
     serverPort: 8883,
 
     // Estado
-    status: gpsData.status || "active",
+    status: gpsData.status || 'active',
     online: false,
 
     // Última posición
@@ -57,7 +57,7 @@ exports.createGPS = async (gpsData) => {
     new PutCommand({
       TableName: TABLE,
       Item: item,
-    }),
+    })
   );
 
   return item;
@@ -71,7 +71,7 @@ exports.getGPSById = async (gpsId) => {
     new GetCommand({
       TableName: TABLE,
       Key: { gpsId },
-    }),
+    })
   );
 
   return result.Item;
@@ -84,12 +84,12 @@ exports.getGPSByDeviceId = async (deviceId) => {
   const result = await docClient.send(
     new QueryCommand({
       TableName: TABLE,
-      IndexName: "deviceId-index",
-      KeyConditionExpression: "deviceId = :deviceId",
+      IndexName: 'deviceId-index',
+      KeyConditionExpression: 'deviceId = :deviceId',
       ExpressionAttributeValues: {
-        ":deviceId": deviceId,
+        ':deviceId': deviceId,
       },
-    }),
+    })
   );
 
   return result.Items?.[0];
@@ -102,12 +102,12 @@ exports.getGPSByVehicle = async (vehicleId) => {
   const result = await docClient.send(
     new QueryCommand({
       TableName: TABLE,
-      IndexName: "vehicleId-index",
-      KeyConditionExpression: "vehicleId = :vehicleId",
+      IndexName: 'vehicleId-index',
+      KeyConditionExpression: 'vehicleId = :vehicleId',
       ExpressionAttributeValues: {
-        ":vehicleId": vehicleId,
+        ':vehicleId': vehicleId,
       },
-    }),
+    })
   );
 
   return result.Items?.[0];
@@ -123,9 +123,9 @@ exports.listGPS = async (filters = {}) => {
 
   // Filtros opcionales
   if (filters.status) {
-    params.FilterExpression = "#status = :status";
-    params.ExpressionAttributeNames = { "#status": "status" };
-    params.ExpressionAttributeValues = { ":status": filters.status };
+    params.FilterExpression = '#status = :status';
+    params.ExpressionAttributeNames = { '#status': 'status' };
+    params.ExpressionAttributeValues = { ':status': filters.status };
   }
 
   const result = await docClient.send(new ScanCommand(params));
@@ -151,19 +151,19 @@ exports.updateGPS = async (gpsId, updates) => {
   });
 
   // Agregar updatedAt
-  updateExpressions.push("#updatedAt = :updatedAt");
-  expressionAttributeNames["#updatedAt"] = "updatedAt";
-  expressionAttributeValues[":updatedAt"] = new Date().toISOString();
+  updateExpressions.push('#updatedAt = :updatedAt');
+  expressionAttributeNames['#updatedAt'] = 'updatedAt';
+  expressionAttributeValues[':updatedAt'] = new Date().toISOString();
 
   const result = await docClient.send(
     new UpdateCommand({
       TableName: TABLE,
       Key: { gpsId },
-      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: "ALL_NEW",
-    }),
+      ReturnValues: 'ALL_NEW',
+    })
   );
 
   return result.Attributes;
@@ -213,7 +213,7 @@ exports.deleteGPS = async (gpsId) => {
     new DeleteCommand({
       TableName: TABLE,
       Key: { gpsId },
-    }),
+    })
   );
 
   return true;
