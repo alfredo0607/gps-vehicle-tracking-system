@@ -73,7 +73,11 @@ const start = async (req, res) => {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
+    console.log('Simulation process started with PID:', simulationProcess.pid);
+
     const autoStopAt = new Date(Date.now() + AUTO_STOP_MS).toISOString();
+
+    console.log('Auto-stop programado para:', autoStopAt);
 
     simulationStats = {
       running: true,
@@ -84,8 +88,12 @@ const start = async (req, res) => {
       autoStopAt,
     };
 
+    console.log('Simulation stats initialized:', simulationStats);
+
     // Poner GPS online + en movimiento inmediatamente
     await syncGPSStatus(true);
+
+    console.log('paso syncGPSStatus:');
 
     // Auto-apagado
     autoStopTimer = setTimeout(async () => {
@@ -94,6 +102,8 @@ const start = async (req, res) => {
       simulationProcess = null;
       await syncGPSStatus(false);
     }, AUTO_STOP_MS);
+
+    console.log('Auto-stop timer configurado:', autoStopTimer);
 
     simulationProcess.stdout.on('data', (data) => {
       const text = data.toString();
@@ -118,6 +128,7 @@ const start = async (req, res) => {
       simulationStats.running = false;
       simulationStats.pid = null;
       simulationStats.autoStopAt = null;
+      console.log('Simulation process terminated');
       simulationProcess = null;
       await syncGPSStatus(false);
       logger.info(`[Simulation] Proceso terminado con código ${code}`);
