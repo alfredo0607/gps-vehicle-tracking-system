@@ -81,6 +81,8 @@ exports.getGPSById = async (gpsId) => {
  * Obtener GPS por deviceId
  */
 exports.getGPSByDeviceId = async (deviceId) => {
+  console.log(`[GPS Service] Buscando GPS con deviceId ${deviceId}`);
+
   const result = await docClient.send(
     new QueryCommand({
       TableName: TABLE,
@@ -91,6 +93,8 @@ exports.getGPSByDeviceId = async (deviceId) => {
       },
     })
   );
+
+  console.log(`[GPS Service] Resultado para deviceId ${deviceId}:`, result);
 
   return result.Items?.[0];
 };
