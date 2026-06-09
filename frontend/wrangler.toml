@@ -1,3 +1,10 @@
 name = "fleet-tracker-pro"
 pages_build_output_dir = "dist"
 compatibility_date = "2025-05-23"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+name = "fleet-tracker-pro"
+
+[env.preview]
+name = "fleet-tracker-pro-preview"
