@@ -50,10 +50,6 @@ export default function LiveMap() {
       if (!mapContainer.current || mapInstance.current) return;
 
       try {
-        // const authHelper = await withIdentityPoolId(
-        //   import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
-        // );
-
         const transformRequest = createTransformRequest();
 
         const newMap = new maplibregl.Map({

@@ -8,6 +8,6 @@ export const awsConfig = {
 
 export const trackerName =
   import.meta.env.VITE_TRACKER_NAME || "VehicleTracker";
-export const mapName = import.meta.env.VITE_MAP_NAME || "StandardLight";
+export const mapName = import.meta.env.VITE_MAP_NAME || "FleetTrackerMap";
 export const updateInterval =
   parseInt(import.meta.env.VITE_UPDATE_INTERVAL) || 5000;
