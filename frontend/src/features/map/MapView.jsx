@@ -24,12 +24,6 @@ export function MapView({ vehicles, selectedId, onVehicleClick }) {
       if (!mapRef.current || mapInstance.current) return;
 
       try {
-        // 3️⃣ Crear mapa
-        // const authHelper = await withIdentityPoolId(
-        //   import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
-        //   import.meta.env.VITE_AWS_REGION,
-        // );
-
         const transformRequest = createTransformRequest();
 
         const map = new maplibregl.Map({

@@ -71,10 +71,6 @@ export default function VehicleHistory() {
 
     async function initMap() {
       try {
-        // const authHelper = await withIdentityPoolId(
-        //   import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
-        // );
-
         const transformRequest = createTransformRequest();
 
         const map = new maplibregl.Map({
