@@ -36,15 +36,15 @@ export default function GPSList() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dispositivos GPS</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Dispositivos GPS</h1>
           <p className="text-gray-600 mt-1">Gestiona los GPS de tu flota</p>
         </div>
         {isAdmin && (
           <Link
             to="/gps/new"
-            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2"
+            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2 shrink-0"
           >
             <Plus className="w-5 h-5" />
             Nuevo GPS
@@ -66,6 +66,7 @@ export default function GPSList() {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -159,6 +160,7 @@ export default function GPSList() {
             <p className="text-gray-500">No se encontraron dispositivos GPS</p>
           </div>
         )}
+        </div>
       </div>
 
       <ConfirmDialog

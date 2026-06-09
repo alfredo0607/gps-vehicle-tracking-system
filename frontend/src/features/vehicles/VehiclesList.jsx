@@ -37,15 +37,15 @@ export default function VehiclesList() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Vehículos</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Vehículos</h1>
           <p className="text-gray-600 mt-1">Gestiona tu flota de vehículos</p>
         </div>
         {isAdmin && (
           <Link
             to="/vehicles/new"
-            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2"
+            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition flex items-center gap-2 shrink-0"
           >
             <Plus className="w-5 h-5" />
             Nuevo Vehículo
@@ -69,6 +69,7 @@ export default function VehiclesList() {
 
       {/* Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -166,6 +167,7 @@ export default function VehiclesList() {
             <p className="text-gray-500">No se encontraron vehículos</p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Confirm Delete Dialog */}

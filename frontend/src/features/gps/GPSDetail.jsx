@@ -69,11 +69,11 @@ export default function GPSDetail() {
 
       <div className="bg-white rounded-lg shadow">
         {/* Header */}
-        <div className="bg-linear-to-r from-brand-600 to-brand-700 text-white p-6 rounded-t-lg">
-          <div className="flex justify-between items-start">
+        <div className="bg-linear-to-r from-brand-600 to-brand-700 text-white p-4 md:p-6 rounded-t-lg">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold">{currentGPS.deviceId}</h1>
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold">{currentGPS.deviceId}</h1>
                 {currentGPS.online ? (
                   <span className="px-3 py-1 bg-green-500 rounded-full text-sm font-semibold flex items-center gap-1">
                     <Activity className="w-4 h-4" />
@@ -91,7 +91,7 @@ export default function GPSDetail() {
               </p>
             </div>
             {isAdmin && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 shrink-0">
                 <button
                   onClick={handleDownloadCertificates}
                   disabled={downloadingCerts}

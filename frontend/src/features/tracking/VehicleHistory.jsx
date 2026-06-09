@@ -257,10 +257,10 @@ export default function VehicleHistory() {
       </button>
 
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex justify-between items-start">
+      <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
               {currentVehicle.plate}
             </h1>
             <p className="text-gray-600 mt-1">
@@ -268,7 +268,7 @@ export default function VehicleHistory() {
               {currentVehicle.year})
             </p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Desde
@@ -278,7 +278,7 @@ export default function VehicleHistory() {
                 name="startDate"
                 value={dateRange.startDate}
                 onChange={handleDateChange}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg"
               />
             </div>
             <div>
@@ -290,14 +290,14 @@ export default function VehicleHistory() {
                 name="endDate"
                 value={dateRange.endDate}
                 onChange={handleDateChange}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg"
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex sm:items-end">
               <button
                 onClick={() => setShowMap(true)}
                 disabled={coordinates.length === 0}
-                className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <MapIcon className="w-5 h-5" />
                 Ver Ruta en Mapa

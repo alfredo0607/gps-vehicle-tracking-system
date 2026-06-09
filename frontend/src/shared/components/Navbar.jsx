@@ -17,38 +17,45 @@ export default function Navbar({ onMenuClick }) {
   return (
     <nav className="bg-brand-900 shadow-md sticky top-0 z-50">
       <div className="px-4 py-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           {/* Left */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={onMenuClick}
-              className="p-2 hover:bg-brand-800 rounded-lg transition"
+              className="p-2 hover:bg-brand-800 rounded-lg transition shrink-0"
             >
               <Menu className="w-6 h-6 text-brand-400" />
             </button>
-            <h1 className="text-2xl font-bold text-brand-500">Fleet Tracker Pro</h1>
+            <h1 className="text-base md:text-2xl font-bold text-brand-500 truncate">
+              Fleet Tracker Pro
+            </h1>
           </div>
 
           {/* Right */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 bg-brand-800 rounded-lg">
-              <User className="w-5 h-5 text-brand-400" />
-              <div className="text-sm">
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 px-3 py-2 bg-brand-800 rounded-lg">
+              <User className="w-5 h-5 text-brand-400 shrink-0" />
+              {/* Desktop: name + email + role badge */}
+              <div className="hidden sm:block text-sm">
                 <p className="font-semibold text-white leading-tight">{user?.name || 'Usuario'}</p>
                 <p className="text-xs text-gray-400">{user?.email}</p>
               </div>
-              <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ml-1 ${rolCfg.color}`}>
+              <span className={`hidden sm:flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ml-1 ${rolCfg.color}`}>
                 <RolIcon className="w-3 h-3" />
                 {rolCfg.label}
+              </span>
+              {/* Mobile: role icon only */}
+              <span className={`sm:hidden flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-full ${rolCfg.color}`}>
+                <RolIcon className="w-3 h-3" />
               </span>
             </div>
 
             <button
               onClick={() => dispatch(logout())}
-              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:bg-brand-800 hover:text-white rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:bg-brand-800 hover:text-white rounded-lg transition"
             >
               <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Salir</span>
+              <span className="hidden sm:inline text-sm font-medium">Salir</span>
             </button>
           </div>
         </div>

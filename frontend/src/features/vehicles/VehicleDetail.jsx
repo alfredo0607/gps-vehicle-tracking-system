@@ -35,15 +35,15 @@ export default function VehicleDetail() {
 
       <div className="bg-white rounded-lg shadow">
         {/* Header */}
-        <div className="bg-linear-to-r from-brand-600 to-brand-700 text-white p-6 rounded-t-lg">
-          <div className="flex justify-between items-start">
+        <div className="bg-linear-to-r from-brand-600 to-brand-700 text-white p-4 md:p-6 rounded-t-lg">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
             <div>
-              <h1 className="text-3xl font-bold">{currentVehicle.plate}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold">{currentVehicle.plate}</h1>
               <p className="text-brand-100 mt-2">
                 {currentVehicle.brand} {currentVehicle.model} ({currentVehicle.year})
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               {isAdmin && (
                 <Link
                   to={`/vehicles/${id}/edit`}

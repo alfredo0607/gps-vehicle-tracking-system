@@ -326,7 +326,7 @@ export default function LiveMap() {
       )}
 
       {/* Stats Panel */}
-      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 w-64 z-20">
+      <div className="absolute top-2 left-2 right-2 md:top-4 md:left-4 md:right-auto md:w-64 bg-white rounded-lg shadow-lg p-3 md:p-4 z-20">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-gray-900 flex items-center">
             <Activity className="w-5 h-5 mr-2 text-brand-600" />
@@ -349,9 +349,9 @@ export default function LiveMap() {
             </button>
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 md:block gap-x-3 gap-y-1.5 md:space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Total Vehículos:</span>
+            <span className="text-gray-600">Total:</span>
             <span className="font-semibold text-gray-900">{stats.total}</span>
           </div>
           <div className="flex justify-between text-sm">
@@ -366,7 +366,7 @@ export default function LiveMap() {
             <span className="text-gray-600">Offline:</span>
             <span className="font-semibold text-gray-400">{stats.offline}</span>
           </div>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-sm col-span-2 md:col-span-1">
             <span className="text-gray-600">En Movimiento:</span>
             <span className="font-semibold text-blue-600">{stats.moving}</span>
           </div>
@@ -396,7 +396,7 @@ export default function LiveMap() {
 
       {/* Vehicle Details Panel */}
       {selectedVehicle && (
-        <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-80 z-20">
+        <div className="absolute bottom-2 left-2 right-2 md:top-4 md:bottom-auto md:right-4 md:left-auto md:w-80 bg-white rounded-lg shadow-lg p-3 md:p-4 z-20">
           <div className="flex justify-between items-start mb-3">
             <div>
               <h3 className="font-bold text-gray-900 text-lg">
@@ -425,7 +425,7 @@ export default function LiveMap() {
                 </Link>
                 <Link
                   to={`/tracking/history/${selectedVehicle.vehicleId}`}
-                  className="block w-full bg-gray-600 text-white text-center py-2 rounded-lg hover:bg-gray-700 transition text-sm flex items-center justify-center gap-2"
+                  className="flex w-full bg-gray-600 text-white text-center py-2 rounded-lg hover:bg-gray-700 transition text-sm items-center justify-center gap-2"
                 >
                   <Navigation className="w-4 h-4" />
                   Ver Historial de Rutas
@@ -446,7 +446,7 @@ export default function LiveMap() {
       )}
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-20">
+      <div className="hidden md:block absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-20">
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
