@@ -19,9 +19,7 @@ const getCredentials = async () => {
 
   const { IdentityId } = await cognitoClient.send(
     new GetIdCommand({
-      IdentityPoolId:
-        import.meta.env.VITE_AWS_IDENTITY_POOL_ID ||
-        "us-east-1:0f62588e-efa7-4b5d-8d44-546439aa34ca",
+      IdentityPoolId: import.meta.env.VITE_AWS_IDENTITY_POOL_ID,
     }),
   );
 
