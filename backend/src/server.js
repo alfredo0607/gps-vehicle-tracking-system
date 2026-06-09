@@ -5,22 +5,6 @@ const logger = require('./utils/logger');
 const PORT = config.port;
 
 const server = app.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════════════╗
-║     🚀 Fleet Tracker API Server                ║
-╚════════════════════════════════════════════════╝
-
-✅ Server running on port ${PORT}
-📍 Environment: ${config.env}
-🗺️  Tracker: ${config.location.trackerName}
-🌐 CORS enabled for: ${config.cors.origin}
-
-📡 API Documentation: http://localhost:${PORT}/api-docs
-🏥 Health check: http://localhost:${PORT}/health
-
-Press CTRL+C to stop
-  `);
-
   logger.info(`
 ╔════════════════════════════════════════════════╗
 ║     🚀 Fleet Tracker API Server                ║
