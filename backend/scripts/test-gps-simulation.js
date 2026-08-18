@@ -22,11 +22,19 @@ const CONFIG = {
   intervalSeconds: 1,
 
   // ── RUTA ──────────────────────────────────
-  // Cambia estas coordenadas para definir inicio y fin
-  startPoint: { lat: 10.867347, lon: -74.775408 }, // Inicio
-  endPoint: { lat: 10.9639, lon: -74.7964 }, // Fin
+  // Circuito urbano por el centro-norte de Barranquilla.
+  // El vehículo recorre los puntos en orden; el último cierra el circuito
+  // sobre el primero para que el loop sea continuo.
+  routePoints: [
+    { name: 'Plaza de la Paz', lat: 10.98802, lon: -74.78901 },
+    { name: 'Parque Suri Salcedo', lat: 10.99409, lon: -74.80427 },
+    { name: 'Parque Washington', lat: 11.00549, lon: -74.81099 },
+    { name: 'Mall Plaza Buenavista', lat: 11.01562, lon: -74.82888 },
+    { name: 'Gran Malecón del Río', lat: 11.0256, lon: -74.79932 },
+    { name: 'Plaza de la Paz', lat: 10.98802, lon: -74.78901 },
+  ],
 
-  avgSpeed: 40, // km/h promedio en ruta
+  avgSpeed: 60, // km/h promedio en ruta
   loopRoute: true, // Al llegar al fin, volver a empezar
 
   // Si OSRM no responde, simular sobre una recta inicio→fin en lugar de abortar
@@ -39,7 +47,7 @@ const CONFIG = {
 
 let waypoints = []; // [{lat, lon}, ...] obtenidos de OSRM
 let waypointIndex = 0; // Índice del waypoint actual
-let currentPos = { lat: CONFIG.startPoint.lat, lon: CONFIG.startPoint.lon };
+let currentPos = { lat: CONFIG.routePoints[0].lat, lon: CONFIG.routePoints[0].lon };
 let currentSpeed = CONFIG.avgSpeed;
 let currentHeading = 0;
 let odometer = 23246;
@@ -147,29 +155,43 @@ function httpGetJson(url, redirectsLeft = 2) {
   });
 }
 
-// Ruta sintética en línea recta: última red para que la simulación no se caiga
-function buildStraightLineRoute(start, end, stepMeters = 30) {
-  const totalKm = haversineKm(start, end);
-  const steps = Math.max(2, Math.ceil((totalKm * 1000) / stepMeters));
-  const pts = [];
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    pts.push({
-      lat: start.lat + (end.lat - start.lat) * t,
-      lon: start.lon + (end.lon - start.lon) * t,
-    });
+// Ruta sintética en línea recta entre los puntos del circuito:
+// última red para que la simulación no se caiga si OSRM no responde
+function buildStraightLineRoute(points, stepMeters = 30) {
+  const pts = [{ ...points[0] }];
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const from = points[i];
+    const to = points[i + 1];
+    const steps = Math.max(1, Math.ceil((haversineKm(from, to) * 1000) / stepMeters));
+    for (let s = 1; s <= steps; s++) {
+      const t = s / steps;
+      pts.push({
+        lat: from.lat + (to.lat - from.lat) * t,
+        lon: from.lon + (to.lon - from.lon) * t,
+      });
+    }
   }
+
   return pts;
 }
 
-async function fetchRoute(start, end) {
-  const path =
-    `/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}` +
-    `?overview=full&geometries=geojson`;
+// Distancia total recorriendo los puntos en orden (km)
+function totalDirectKm(points) {
+  let km = 0;
+  for (let i = 0; i < points.length - 1; i++) km += haversineKm(points[i], points[i + 1]);
+  return km;
+}
+
+async function fetchRoute(points) {
+  const coordList = points.map((p) => `${p.lon},${p.lat}`).join(';');
+  const path = `/route/v1/driving/${coordList}?overview=full&geometries=geojson`;
 
   console.log('🗺️  Obteniendo ruta real desde OSRM...');
-  console.log(`   Inicio: ${start.lat}, ${start.lon}`);
-  console.log(`   Fin:    ${end.lat}, ${end.lon}`);
+  console.log(`   Circuito de ${points.length} puntos:`);
+  points.forEach((p, i) => {
+    console.log(`     ${i + 1}. ${p.name || `${p.lat}, ${p.lon}`}`);
+  });
 
   for (const server of OSRM_SERVERS) {
     for (let attempt = 1; attempt <= OSRM_RETRIES_PER_SERVER; attempt++) {
@@ -200,10 +222,10 @@ async function fetchRoute(start, end) {
     throw new Error('Todos los servidores OSRM fallaron');
   }
 
-  const pts = buildStraightLineRoute(start, end);
+  const pts = buildStraightLineRoute(points);
   console.warn(
     `   ⚠️  OSRM no disponible — usando ruta recta de respaldo: ` +
-      `${pts.length} puntos, ${haversineKm(start, end).toFixed(1)} km\n`
+      `${pts.length} puntos, ${totalDirectKm(points).toFixed(1)} km\n`
   );
   return pts;
 }
@@ -346,7 +368,7 @@ if (missingFiles) {
 }
 
 // Obtener ruta real y luego conectar
-fetchRoute(CONFIG.startPoint, CONFIG.endPoint)
+fetchRoute(CONFIG.routePoints)
   .then((pts) => {
     waypoints = pts;
     currentPos = { ...waypoints[0] };
