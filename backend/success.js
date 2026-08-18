@@ -1,40 +1,33 @@
-const AWS = require("aws-sdk");
+const AWS = require('aws-sdk');
 const location = new AWS.Location();
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-const TRACKER_NAME = "VehicleTracker";
-const TABLE_GPS = "GPS";
-const TABLE_VEHICULOS = "Vehiculos";
-const TABLE_COORDENADAS = "Coordenadas";
+const TRACKER_NAME = 'VehicleTracker';
+const TABLE_GPS = 'GPS';
+const TABLE_VEHICULOS = 'Vehiculos';
+const TABLE_COORDENADAS = 'Coordenadas';
 
 exports.handler = async (event) => {
-
-
-  
-
-  console.log("📡 Evento recibido:", JSON.stringify(event, null, 2));
+  console.log('📡 Evento recibido:', JSON.stringify(event, null, 2));
 
   try {
     const gpsData = await paseDataEvent(event);
 
     if (!gpsData) {
-      console.error("❌ No se pudieron parsear los datos GPS");
-      return { statusCode: 400, body: "Error parseando datos GPS" };
+      console.error('❌ No se pudieron parsear los datos GPS');
+      return { statusCode: 400, body: 'Error parseando datos GPS' };
     }
 
-    console.log(
-      "✅ Datos GPS parseados correctamente:",
-      JSON.stringify(gpsData, null, 2),
-    );
+    console.log('✅ Datos GPS parseados correctamente:', JSON.stringify(gpsData, null, 2));
 
     // 2. Buscar GPS en base de datos para obtener vehicleId
     const gps = await getGPS(gpsData.deviceId);
 
     if (!gps) {
-      console.warn("⚠️ GPS no registrado en BD:", gpsData.deviceId);
+      console.warn('⚠️ GPS no registrado en BD:', gpsData.deviceId);
       return {
         statusCode: 400,
-        body: "⚠️ GPS no registrado en BD:",
+        body: '⚠️ GPS no registrado en BD:',
         data: gpsData.deviceId,
       };
     }
@@ -44,34 +37,34 @@ exports.handler = async (event) => {
 
     // Validar coordenadas
     if (!isValidCoordinates(gpsData.latitude, gpsData.longitude)) {
-      console.error("❌ Coordenadas inválidas:", {
+      console.error('❌ Coordenadas inválidas:', {
         latitude: gpsData.latitude,
         longitude: gpsData.longitude,
       });
-      return { statusCode: 400, body: "Coordenadas inválidas" };
+      return { statusCode: 400, body: 'Coordenadas inválidas' };
     }
 
-    console.log("✅ Coordenadas válidas:", {
+    console.log('✅ Coordenadas válidas:', {
       lat: gpsData.latitude,
       lon: gpsData.longitude,
     });
 
     // Guardar en Location Service
     const result = await saveToLocationService(gpsData);
-    console.log("✅ Ubicación guardada en Location Service:", result);
+    console.log('✅ Ubicación guardada en Location Service:', result);
 
     // Guardar coordenada completa db
     await saveCoordinate(gpsId, vehicleId, gpsData, event?.state?.reported);
-    console.log("✅ Coordenada guardada");
+    console.log('✅ Coordenada guardada');
 
     // 5. Actualizar última posición del GPS
     await updateGPSLastPosition(gpsId, gpsData);
-    console.log("✅ GPS actualizado");
+    console.log('✅ GPS actualizado');
 
     // 6. Actualizar odómetro del vehículo (si tiene)
-    if (vehicleId && event?.state?.reported["16"]) {
-      await updateVehicleOdometer(vehicleId, event?.state?.reported["16"]);
-      console.log("✅ Vehículo actualizado");
+    if (vehicleId && event?.state?.reported['16']) {
+      await updateVehicleOdometer(vehicleId, event?.state?.reported['16']);
+      console.log('✅ Vehículo actualizado');
     }
 
     // 7. Detectar y guardar eventos
@@ -80,7 +73,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: "Ubicación procesada exitosamente",
+        message: 'Ubicación procesada exitosamente',
         device: gpsData.deviceId,
         location: {
           latitude: gpsData.latitude,
@@ -89,8 +82,8 @@ exports.handler = async (event) => {
       }),
     };
   } catch (error) {
-    console.error("❌ Error procesando datos GPS:", error);
-    console.error("Stack:", error.stack);
+    console.error('❌ Error procesando datos GPS:', error);
+    console.error('Stack:', error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -111,11 +104,11 @@ function parseTeltonikaDeviceShadow(event) {
     // Extraer coordenadas del campo latlng (formato: "lat,lng")
     const latlngString = reported.latlng;
     if (!latlngString) {
-      console.error("❌ Campo latlng no encontrado");
+      console.error('❌ Campo latlng no encontrado');
       return null;
     }
 
-    const [latStr, lonStr] = latlngString.split(",");
+    const [latStr, lonStr] = latlngString.split(',');
     const latitude = parseFloat(latStr);
     const longitude = parseFloat(lonStr);
 
@@ -133,13 +126,13 @@ function parseTeltonikaDeviceShadow(event) {
       timestamp,
       accuracy: 10,
       // Datos adicionales (no se envían a Location Service)
-      ignition: reported["239"] === 1,
-      movement: reported["240"] === 1,
-      batteryVoltage: reported["67"] || 0,
-      externalVoltage: reported["66"] || 0,
+      ignition: reported['239'] === 1,
+      movement: reported['240'] === 1,
+      batteryVoltage: reported['67'] || 0,
+      externalVoltage: reported['66'] || 0,
     };
   } catch (error) {
-    console.error("❌ Error parseando Device Shadow:", error);
+    console.error('❌ Error parseando Device Shadow:', error);
     return null;
   }
 }
@@ -149,7 +142,7 @@ function parseTeltonikaDeviceShadow(event) {
  */
 function parseTeltonikaDirectReport(event) {
   try {
-    const [latStr, lonStr] = event.latlng.split(",");
+    const [latStr, lonStr] = event.latlng.split(',');
 
     return {
       deviceId: event.deviceId,
@@ -163,7 +156,7 @@ function parseTeltonikaDirectReport(event) {
       accuracy: 10,
     };
   } catch (error) {
-    console.error("❌ Error parseando Direct Report:", error);
+    console.error('❌ Error parseando Direct Report:', error);
     return null;
   }
 }
@@ -185,7 +178,7 @@ function parseTeltonikaJSON(event) {
       accuracy: 10,
     };
   } catch (error) {
-    console.error("❌ Error parseando JSON:", error);
+    console.error('❌ Error parseando JSON:', error);
     return null;
   }
 }
@@ -196,7 +189,7 @@ function parseTeltonikaJSON(event) {
 function parseSimpleJSON(event) {
   try {
     return {
-      deviceId: event.deviceId || event.imei || "unknown",
+      deviceId: event.deviceId || event.imei || 'unknown',
       latitude: parseFloat(event.latitude),
       longitude: parseFloat(event.longitude),
       altitude: parseFloat(event.altitude || 0),
@@ -207,7 +200,7 @@ function parseSimpleJSON(event) {
       accuracy: parseFloat(event.accuracy || 10),
     };
   } catch (error) {
-    console.error("❌ Error parseando JSON simple:", error);
+    console.error('❌ Error parseando JSON simple:', error);
     return null;
   }
 }
@@ -217,21 +210,21 @@ function paseDataEvent(event) {
 
   // Detectar formato de datos
   if (event.state && event.state.reported) {
-    console.log("✅ Formato detectado: Teltonika Device Shadow");
+    console.log('✅ Formato detectado: Teltonika Device Shadow');
     gpsData = parseTeltonikaDeviceShadow(event);
   } else if (event.latlng) {
-    console.log("✅ Formato detectado: Teltonika Direct Report");
+    console.log('✅ Formato detectado: Teltonika Direct Report');
     gpsData = parseTeltonikaDirectReport(event);
   } else if (event.gps && event.gps.latitude) {
-    console.log("✅ Formato detectado: Teltonika JSON GPS");
+    console.log('✅ Formato detectado: Teltonika JSON GPS');
     gpsData = parseTeltonikaJSON(event);
   } else if (event.latitude && event.longitude) {
-    console.log("✅ Formato detectado: JSON Simple");
+    console.log('✅ Formato detectado: JSON Simple');
     gpsData = parseSimpleJSON(event);
   } else {
-    console.error("❌ Formato de datos no reconocido");
-    console.error("Estructura recibida:", Object.keys(event));
-    return { statusCode: 400, body: "Formato desconocido" };
+    console.error('❌ Formato de datos no reconocido');
+    console.error('Estructura recibida:', Object.keys(event));
+    return { statusCode: 400, body: 'Formato desconocido' };
   }
 
   return gpsData;
@@ -252,7 +245,7 @@ function isValidCoordinates(lat, lon) {
     lon <= 180;
 
   if (!isValid) {
-    console.error("Validación falló:", {
+    console.error('Validación falló:', {
       lat,
       lon,
       isNaN_lat: isNaN(lat),
@@ -288,24 +281,24 @@ async function saveToLocationService(gpsData) {
     ],
   };
 
-  console.log("📤 Enviando a Location Service");
+  console.log('📤 Enviando a Location Service');
 
   try {
     const sts = new AWS.STS();
     const identity = await sts.getCallerIdentity().promise();
-    console.log("Cuenta Script:", identity.Account);
+    console.log('Cuenta Script:', identity.Account);
 
     const result = await location.batchUpdateDevicePosition(params).promise();
 
     if (result.Errors && result.Errors.length > 0) {
-      console.error("⚠️ Errores:", result.Errors);
+      console.error('⚠️ Errores:', result.Errors);
     } else {
-      console.log("✅ Guardado exitosamente");
+      console.log('✅ Guardado exitosamente');
     }
 
     return result;
   } catch (error) {
-    console.error("❌ Error en Location Service:", error.message);
+    console.error('❌ Error en Location Service:', error.message);
     throw error;
   }
 }
@@ -318,21 +311,20 @@ async function getGPS(deviceId) {
     const result = await dynamodb
       .query({
         TableName: TABLE_GPS,
-        IndexName: "deviceId-index",
-        KeyConditionExpression: "deviceId = :deviceId",
+        IndexName: 'deviceId-index',
+        KeyConditionExpression: 'deviceId = :deviceId',
         ExpressionAttributeValues: {
-          ":deviceId": deviceId,
+          ':deviceId': deviceId,
         },
         Limit: 1,
       })
       .promise();
 
-    console.log("================>", result);
-
+    console.log('================>', result);
 
     return result.Items?.[0] || null;
   } catch (error) {
-    console.error("Error buscando GPS:", error);
+    console.error('Error buscando GPS:', error);
     return null;
   }
 }
@@ -342,7 +334,7 @@ async function getGPS(deviceId) {
  */
 async function saveCoordinate(gpsId, vehicleId, gpsData, rawData) {
   const timestamp = new Date(gpsData.timestamp).getTime();
-  const date = new Date(gpsData.timestamp).toISOString().split("T")[0];
+  const date = new Date(gpsData.timestamp).toISOString().split('T')[0];
   const dateObj = new Date(gpsData.timestamp);
 
   const item = {
@@ -368,12 +360,12 @@ async function saveCoordinate(gpsId, vehicleId, gpsData, rawData) {
     accuracy: gpsData.accuracy,
 
     // Telemetría
-    ignition: rawData && rawData["239"] === 1,
-    movement: rawData && rawData["240"] === 1,
-    odometer: rawData && rawData["16"] || 0,
-    batteryVoltage: rawData && rawData["67"] || 0,
-    externalVoltage: rawData && rawData["66"] || 0,
-    gsmSignal: rawData && rawData["21"] || 0,
+    ignition: rawData && rawData['239'] === 1,
+    movement: rawData && rawData['240'] === 1,
+    odometer: (rawData && rawData['16']) || 0,
+    batteryVoltage: (rawData && rawData['67']) || 0,
+    externalVoltage: (rawData && rawData['66']) || 0,
+    gsmSignal: (rawData && rawData['21']) || 0,
 
     // IO completo
     io: rawData,
@@ -412,18 +404,18 @@ async function updateGPSLastPosition(gpsId, gpsData) {
                 #online = :online
         `,
       ExpressionAttributeNames: {
-        "#online": "online",
+        '#online': 'online',
       },
       ExpressionAttributeValues: {
-        ":lat": gpsData.latitude,
-        ":lon": gpsData.longitude,
-        ":speed": gpsData.speed,
-        ":heading": gpsData.heading,
-        ":alt": gpsData.altitude,
-        ":sat": gpsData.satellites,
-        ":update": gpsData.timestamp,
-        ":now": new Date().toISOString(),
-        ":online": true,
+        ':lat': gpsData.latitude,
+        ':lon': gpsData.longitude,
+        ':speed': gpsData.speed,
+        ':heading': gpsData.heading,
+        ':alt': gpsData.altitude,
+        ':sat': gpsData.satellites,
+        ':update': gpsData.timestamp,
+        ':now': new Date().toISOString(),
+        ':online': true,
       },
     })
     .promise();
@@ -437,10 +429,10 @@ async function updateVehicleOdometer(vehicleId, odometer) {
     .update({
       TableName: TABLE_VEHICULOS,
       Key: { vehicleId: vehicleId },
-      UpdateExpression: "SET mileage = :mileage, updatedAt = :now",
+      UpdateExpression: 'SET mileage = :mileage, updatedAt = :now',
       ExpressionAttributeValues: {
-        ":mileage": odometer,
-        ":now": new Date().toISOString(),
+        ':mileage': odometer,
+        ':now': new Date().toISOString(),
       },
     })
     .promise();
@@ -452,16 +444,15 @@ async function updateVehicleOdometer(vehicleId, odometer) {
 async function detectEvents(gpsId, vehicleId, gpsData, rawData) {
   // Ejemplo: Exceso de velocidad
   if (gpsData.speed > 80) {
-    console.log("⚠️ ALERTA: Exceso de velocidad");
+    console.log('⚠️ ALERTA: Exceso de velocidad');
     // Aquí podrías guardar el evento o enviar notificación
   }
 
   // Ejemplo: Ignición encendida
-  if (rawData && rawData["239"] === 1) {
-    console.log("🔑 Ignición encendida");
+  if (rawData && rawData['239'] === 1) {
+    console.log('🔑 Ignición encendida');
   }
 }
-
 
 function randomId() {
   return Math.random().toString(36).substring(2, 10);
