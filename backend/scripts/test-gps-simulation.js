@@ -28,6 +28,9 @@ const CONFIG = {
 
   avgSpeed: 40, // km/h promedio en ruta
   loopRoute: true, // Al llegar al fin, volver a empezar
+
+  // Si OSRM no responde, simular sobre una recta inicio→fin en lugar de abortar
+  fallbackToStraightLine: true,
 };
 
 // ============================================
@@ -76,41 +79,133 @@ function bearingDeg(a, b) {
 // OBTENER RUTA REAL DESDE OSRM
 // ============================================
 
-function fetchRoute(start, end) {
+// Servidores OSRM (el demo público es gratuito pero se satura y responde HTML)
+const OSRM_SERVERS = [
+  'https://router.project-osrm.org',
+  'https://routing.openstreetmap.de/routed-car',
+];
+
+const OSRM_TIMEOUT_MS = 15000;
+const OSRM_RETRIES_PER_SERVER = 2;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// GET que valida status y content-type antes de intentar parsear JSON
+function httpGetJson(url, redirectsLeft = 2) {
   return new Promise((resolve, reject) => {
-    const url =
-      `https://router.project-osrm.org/route/v1/driving/` +
-      `${start.lon},${start.lat};${end.lon},${end.lat}` +
-      `?overview=full&geometries=geojson`;
+    const req = https.get(
+      url,
+      { headers: { 'User-Agent': 'fleet-tracker-gps-simulator/1.0', Accept: 'application/json' } },
+      (res) => {
+        const { statusCode, headers } = res;
 
-    console.log('🗺️  Obteniendo ruta real desde OSRM...');
-    console.log(`   Inicio: ${start.lat}, ${start.lon}`);
-    console.log(`   Fin:    ${end.lat}, ${end.lon}`);
+        // Redirecciones: el demo público a veces reubica la petición
+        if (statusCode >= 300 && statusCode < 400 && headers.location) {
+          res.resume();
+          if (redirectsLeft <= 0) return reject(new Error(`Demasiadas redirecciones (${url})`));
+          return httpGetJson(new URL(headers.location, url).toString(), redirectsLeft - 1).then(
+            resolve,
+            reject
+          );
+        }
 
-    https
-      .get(url, (res) => {
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
+          if (statusCode !== 200) {
+            const hint =
+              statusCode === 429
+                ? ' (límite de peticiones del servidor demo)'
+                : statusCode >= 500
+                  ? ' (servidor OSRM caído o saturado)'
+                  : '';
+            return reject(new Error(`HTTP ${statusCode}${hint}`));
+          }
+
+          const contentType = headers['content-type'] || '';
+          if (!contentType.includes('json')) {
+            const snippet = data.slice(0, 80).replace(/\s+/g, ' ');
+            return reject(new Error(`Respuesta no-JSON (${contentType || 'sin tipo'}): ${snippet}`));
+          }
+
           try {
-            const json = JSON.parse(data);
-            if (json.code !== 'Ok') {
-              return reject(new Error(`OSRM respondió: ${json.code} — ${json.message || ''}`));
-            }
-            const coords = json.routes[0].geometry.coordinates; // [[lon, lat], ...]
-            const pts = coords.map(([lon, lat]) => ({ lat, lon }));
-            const totalKm = json.routes[0].distance / 1000;
-            console.log(`   ✅ Ruta obtenida: ${pts.length} puntos, ${totalKm.toFixed(1)} km\n`);
-            resolve(pts);
+            resolve(JSON.parse(data));
           } catch (err) {
             reject(new Error(`Error parseando respuesta OSRM: ${err.message}`));
           }
         });
-      })
-      .on('error', (err) => {
-        reject(new Error(`No se pudo contactar OSRM: ${err.message}`));
-      });
+      }
+    );
+
+    req.setTimeout(OSRM_TIMEOUT_MS, () => {
+      req.destroy(new Error(`Timeout tras ${OSRM_TIMEOUT_MS / 1000}s`));
+    });
+
+    req.on('error', (err) => reject(new Error(`No se pudo contactar OSRM: ${err.message}`)));
   });
+}
+
+// Ruta sintética en línea recta: última red para que la simulación no se caiga
+function buildStraightLineRoute(start, end, stepMeters = 30) {
+  const totalKm = haversineKm(start, end);
+  const steps = Math.max(2, Math.ceil((totalKm * 1000) / stepMeters));
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    pts.push({
+      lat: start.lat + (end.lat - start.lat) * t,
+      lon: start.lon + (end.lon - start.lon) * t,
+    });
+  }
+  return pts;
+}
+
+async function fetchRoute(start, end) {
+  const path =
+    `/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}` +
+    `?overview=full&geometries=geojson`;
+
+  console.log('🗺️  Obteniendo ruta real desde OSRM...');
+  console.log(`   Inicio: ${start.lat}, ${start.lon}`);
+  console.log(`   Fin:    ${end.lat}, ${end.lon}`);
+
+  for (const server of OSRM_SERVERS) {
+    for (let attempt = 1; attempt <= OSRM_RETRIES_PER_SERVER; attempt++) {
+      try {
+        const json = await httpGetJson(server + path);
+
+        if (json.code !== 'Ok') {
+          throw new Error(`OSRM respondió: ${json.code} — ${json.message || ''}`);
+        }
+        if (!json.routes || !json.routes.length) {
+          throw new Error('OSRM no devolvió ninguna ruta');
+        }
+
+        const coords = json.routes[0].geometry.coordinates; // [[lon, lat], ...]
+        const pts = coords.map(([lon, lat]) => ({ lat, lon }));
+        const totalKm = json.routes[0].distance / 1000;
+        console.log(`   ✅ Ruta obtenida: ${pts.length} puntos, ${totalKm.toFixed(1)} km\n`);
+        return pts;
+      } catch (err) {
+        const host = new URL(server).host;
+        console.warn(`   ⚠️  ${host} (intento ${attempt}/${OSRM_RETRIES_PER_SERVER}): ${err.message}`);
+        if (attempt < OSRM_RETRIES_PER_SERVER) await sleep(1000 * attempt);
+      }
+    }
+  }
+
+  if (!CONFIG.fallbackToStraightLine) {
+    throw new Error('Todos los servidores OSRM fallaron');
+  }
+
+  const pts = buildStraightLineRoute(start, end);
+  console.warn(
+    `   ⚠️  OSRM no disponible — usando ruta recta de respaldo: ` +
+      `${pts.length} puntos, ${haversineKm(start, end).toFixed(1)} km\n`
+  );
+  return pts;
 }
 
 // ============================================
@@ -269,7 +364,7 @@ fetchRoute(CONFIG.startPoint, CONFIG.endPoint)
   })
   .catch((err) => {
     console.error(`\n❌ No se pudo obtener la ruta: ${err.message}`);
-    console.error('   Verifica tu conexión a internet e intenta de nuevo.\n');
+    console.error('   Revisa tu conexión, o activa CONFIG.fallbackToStraightLine.\n');
     process.exit(1);
   });
 
