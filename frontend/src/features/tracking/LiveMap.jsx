@@ -12,6 +12,124 @@ import {
   getMapStyleUrl,
 } from "../../shared/services/aws/locationService";
 
+// Frecuencia de sondeo: rápida mientras haya GPS en línea, lenta en reposo.
+// La duración de la interpolación se iguala al sondeo para que el movimiento
+// sea continuo y sin pausas entre actualizaciones.
+const POLL_ACTIVE_MS = 3000;
+const POLL_IDLE_MS = 10000;
+
+// Saltos mayores a esto no se interpolan (reconexión, cambio de zona, primer fix)
+const SNAP_THRESHOLD_M = 2000;
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+// Diferencia angular por el camino más corto (-180..180)
+function shortestAngleDelta(from, to) {
+  return ((((to - from) % 360) + 540) % 360) - 180;
+}
+
+function distanceMeters(a, b) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
+function buildPopupHTML(gps, vehicle) {
+  return `
+    <div style="padding: 8px; min-width: 200px;">
+      <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
+        ${vehicle?.plate || gps.deviceId}
+      </h3>
+      <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">
+        ${vehicle?.brand || ""} ${vehicle?.model || ""}
+      </p>
+      <div style="font-size: 12px; color: #9ca3af;">
+        <p style="margin: 2px 0;">
+          <strong>Velocidad:</strong> ${gps.lastSpeed || 0} km/h
+        </p>
+        <p style="margin: 2px 0;">
+          <strong>Rumbo:</strong> ${gps.lastHeading || 0}°
+        </p>
+        <p style="margin: 2px 0;">
+          <strong>Satélites:</strong> ${gps.lastSatellites || 0}
+        </p>
+        <p style="margin-top: 6px; font-size: 11px; color: #d1d5db;">
+          ${new Date(gps.lastUpdate).toLocaleString("es-CO")}
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+// El elemento raíz lo posiciona MapLibre vía transform, por eso el rumbo
+// se aplica sobre un hijo (.marker-rotate) y no sobre la raíz.
+function buildMarkerElement() {
+  const el = document.createElement("div");
+  el.className = "custom-marker";
+  el.style.width = "32px";
+  el.style.height = "32px";
+  el.style.cursor = "pointer";
+
+  el.innerHTML = `
+    <div style="position: relative;">
+      <div class="marker-body" style="
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 4px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.3s ease;
+        will-change: transform;
+      ">
+        <div class="marker-rotate" style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          will-change: transform;
+        ">
+          <svg class="marker-icon-move" style="width: 15px; height: 15px; color: white; display: none;" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2 L19 20 L12 16 L5 20 Z"/>
+          </svg>
+          <svg class="marker-icon-idle" style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="marker-pulse" style="
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        background-color: #10b981;
+        border-radius: 50%;
+        border: 2px solid white;
+        animation: pulse 2s infinite;
+        display: none;
+      "></div>
+    </div>
+  `;
+
+  el.addEventListener("mouseenter", () => {
+    el.querySelector(".marker-body").style.transform = "scale(1.15)";
+  });
+  el.addEventListener("mouseleave", () => {
+    el.querySelector(".marker-body").style.transform = "scale(1)";
+  });
+
+  return el;
+}
+
 export default function LiveMap() {
   const mapContainer = useRef(null);
   const mapInstance = useRef(null);
@@ -26,6 +144,8 @@ export default function LiveMap() {
   const { running: simRunning } = useSelector((state) => state.simulation);
   const initialFitDone = useRef(false); // ✅ NUEVO: Bandera para controlar el fitBounds inicial
   const userInteracted = useRef(false); // ✅ NUEVO: Detectar si el usuario movió el mapa
+  const pollMs = useRef(POLL_IDLE_MS); // Ritmo de sondeo actual
+  const rafId = useRef(null); // Bucle de animación de los marcadores
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -35,13 +155,35 @@ export default function LiveMap() {
       setLoading(false);
     };
     loadData();
+  }, [dispatch]);
 
-    // Actualizar cada 10 segundos
-    const interval = setInterval(() => {
-      dispatch(fetchGPSList());
-    }, 10000);
+  // Mantener el ritmo de sondeo al día sin reiniciar el temporizador en cada ciclo
+  useEffect(() => {
+    pollMs.current = gpsList.some((gps) => gps.online)
+      ? POLL_ACTIVE_MS
+      : POLL_IDLE_MS;
+  }, [gpsList]);
 
-    return () => clearInterval(interval);
+  // Sondeo encadenado: espera a que termine una petición antes de agendar la
+  // siguiente, así no se solapan si la red va lenta
+  useEffect(() => {
+    let timer;
+    let cancelled = false;
+
+    const tick = async () => {
+      try {
+        await dispatch(fetchGPSList());
+      } finally {
+        if (!cancelled) timer = setTimeout(tick, pollMs.current);
+      }
+    };
+
+    timer = setTimeout(tick, pollMs.current);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [dispatch]);
 
   // Inicializar mapa
@@ -97,148 +239,131 @@ export default function LiveMap() {
     };
   }, []);
 
-  // Actualizar marcadores
+  // Sincronizar marcadores: se crean una sola vez y luego se actualizan en
+  // sitio. Recrearlos en cada sondeo era lo que producía el salto brusco.
   useEffect(() => {
     if (!mapInstance.current || !mapLoaded || loading) return;
-
-    console.log("🔄 Actualizando marcadores...");
-
-    // Limpiar marcadores anteriores
-    Object.values(markers.current).forEach((marker) => {
-      try {
-        marker.remove();
-      } catch (error) {
-        console.error("Error removiendo marcador:", error);
-      }
-    });
-    markers.current = {};
 
     const gpsWithPosition = gpsList.filter(
       (gps) => gps.lastLatitude && gps.lastLongitude,
     );
 
-    console.log(
-      `📍 GPS con posición: ${gpsWithPosition.length}`,
-      gpsWithPosition,
-    );
+    // Retirar marcadores de GPS que ya no vienen en la lista
+    const vigentes = new Set(gpsWithPosition.map((gps) => gps.gpsId));
+    Object.entries(markers.current).forEach(([gpsId, entry]) => {
+      if (!vigentes.has(gpsId)) {
+        try {
+          entry.marker.remove();
+        } catch (error) {
+          console.error("Error removiendo marcador:", error);
+        }
+        delete markers.current[gpsId];
+      }
+    });
 
-    if (gpsWithPosition.length === 0) {
-      console.log("⚠️ No hay GPS con posición disponible");
-      return;
-    }
+    if (gpsWithPosition.length === 0) return;
 
-    // Agregar marcadores
     gpsWithPosition.forEach((gps) => {
       try {
-        const el = document.createElement("div");
-        el.className = "custom-marker";
-        el.style.width = "32px";
-        el.style.height = "32px";
-        el.style.cursor = "pointer";
-
-        el.innerHTML = `
-          <div style="position: relative;">
-            <div style="
-              width: 32px;
-              height: 32px;
-              background-color: ${gps.online ? "#0ea5e9" : "#9ca3af"};
-              border-radius: 50%;
-              border: 4px solid white;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              transition: transform 0.2s;
-            "
-            onmouseover="this.style.transform='scale(1.1)'"
-            onmouseout="this.style.transform='scale(1)'"
-            >
-              <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-              </svg>
-            </div>
-            ${
-              gps.online
-                ? `<div style="
-                    position: absolute;
-                    top: -2px;
-                    right: -2px;
-                    width: 12px;
-                    height: 12px;
-                    background-color: #10b981;
-                    border-radius: 50%;
-                    border: 2px solid white;
-                    animation: pulse 2s infinite;
-                  "></div>`
-                : ""
-            }
-          </div>
-        `;
-
-        console.log(
-          `➕ Creando marcador para ${gps.deviceId} en [${gps.lastLongitude}, ${gps.lastLatitude}]`,
-        );
-
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([gps.lastLongitude, gps.lastLatitude])
-          .addTo(mapInstance.current);
-
         const vehicle = vehicles.find((v) => v.gpsId === gps.gpsId);
-        const popup = new maplibregl.Popup({
-          offset: 25,
-          closeButton: true,
-          closeOnClick: false,
-        }).setHTML(`
-          <div style="padding: 8px; min-width: 200px;">
-            <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
-              ${vehicle?.plate || gps.deviceId}
-            </h3>
-            <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">
-              ${vehicle?.brand || ""} ${vehicle?.model || ""}
-            </p>
-            <div style="font-size: 12px; color: #9ca3af;">
-              <p style="margin: 2px 0;">
-                <strong>Velocidad:</strong> ${gps.lastSpeed || 0} km/h
-              </p>
-              <p style="margin: 2px 0;">
-                <strong>Rumbo:</strong> ${gps.lastHeading || 0}°
-              </p>
-              <p style="margin: 2px 0;">
-                <strong>Satélites:</strong> ${gps.lastSatellites || 0}
-              </p>
-              <p style="margin-top: 6px; font-size: 11px; color: #d1d5db;">
-                ${new Date(gps.lastUpdate).toLocaleString("es-CO")}
-              </p>
-            </div>
-          </div>
-        `);
+        const target = { lng: gps.lastLongitude, lat: gps.lastLatitude };
+        const heading = Number(gps.lastHeading) || 0;
+        const moving = (gps.lastSpeed || 0) > 5;
 
-        marker.setPopup(popup);
-        markers.current[gps.gpsId] = marker;
+        let entry = markers.current[gps.gpsId];
 
-        // ✅ NUEVO: Click handler con animación flyTo
-        el.addEventListener("click", () => {
-          setSelectedVehicle(
-            vehicle || { gpsId: gps.gpsId, deviceId: gps.deviceId },
-          );
-          popup.addTo(mapInstance.current);
+        // ── Crear marcador la primera vez ──
+        if (!entry) {
+          const el = buildMarkerElement();
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([target.lng, target.lat])
+            .addTo(mapInstance.current);
 
-          // ✅ Volar suavemente a la posición del GPS
-          mapInstance.current.flyTo({
-            center: [gps.lastLongitude, gps.lastLatitude],
-            zoom: 16,
-            speed: 1.2,
-            curve: 1,
-            essential: true,
+          const popup = new maplibregl.Popup({
+            offset: 25,
+            closeButton: true,
+            closeOnClick: false,
+          }).setHTML(buildPopupHTML(gps, vehicle));
+
+          marker.setPopup(popup);
+
+          entry = {
+            marker,
+            el,
+            popup,
+            current: { ...target }, // posición dibujada ahora mismo
+            from: { ...target }, // origen de la interpolación
+            target: { ...target }, // destino de la interpolación
+            startTime: 0,
+            duration: 0,
+            currentHeading: heading,
+            targetHeading: heading,
+          };
+          markers.current[gps.gpsId] = entry;
+
+          el.addEventListener("click", () => {
+            const v = markers.current[gps.gpsId];
+            setSelectedVehicle(
+              vehicle || { gpsId: gps.gpsId, deviceId: gps.deviceId },
+            );
+            popup.addTo(mapInstance.current);
+
+            // Volar a la posición interpolada actual, no a la del último sondeo
+            mapInstance.current.flyTo({
+              center: [v.current.lng, v.current.lat],
+              zoom: 16,
+              speed: 1.2,
+              curve: 1,
+              essential: true,
+            });
+
+            userInteracted.current = true;
           });
+        }
 
-          // ✅ Marcar como interacción del usuario para prevenir auto-zoom
-          userInteracted.current = true;
-        });
+        // ── Actualizar apariencia ──
+        const body = entry.el.querySelector(".marker-body");
+        const pulse = entry.el.querySelector(".marker-pulse");
+        const iconMove = entry.el.querySelector(".marker-icon-move");
+        const iconIdle = entry.el.querySelector(".marker-icon-idle");
 
-        console.log(`✅ Marcador creado para ${gps.deviceId}`);
+        body.style.backgroundColor = gps.online
+          ? moving
+            ? "#0ea5e9"
+            : "#64748b"
+          : "#9ca3af";
+        pulse.style.display = gps.online ? "block" : "none";
+        iconMove.style.display = moving ? "block" : "none";
+        iconIdle.style.display = moving ? "none" : "block";
+
+        // Refrescar el popup solo si está abierto, para no perder el foco
+        if (entry.popup.isOpen()) {
+          entry.popup.setHTML(buildPopupHTML(gps, vehicle));
+        }
+
+        // ── Programar la interpolación hacia la nueva posición ──
+        const cambio =
+          entry.target.lng !== target.lng || entry.target.lat !== target.lat;
+
+        if (cambio) {
+          const salto = distanceMeters(entry.current, target);
+
+          if (salto > SNAP_THRESHOLD_M) {
+            // Salto irreal: colocar de una vez en lugar de cruzar la ciudad
+            entry.current = { ...target };
+            entry.marker.setLngLat([target.lng, target.lat]);
+            entry.duration = 0;
+          } else {
+            entry.from = { ...entry.current };
+            entry.startTime = performance.now();
+            entry.duration = pollMs.current;
+          }
+          entry.target = { ...target };
+        }
+
+        entry.targetHeading = heading;
       } catch (error) {
-        console.error(`❌ Error creando marcador para ${gps.deviceId}:`, error);
+        console.error(`❌ Error actualizando marcador ${gps.deviceId}:`, error);
       }
     });
 
@@ -267,6 +392,65 @@ export default function LiveMap() {
       }
     }
   }, [gpsList, vehicles, loading, mapLoaded]);
+
+  // Bucle de animación: interpola posición y rumbo entre sondeos.
+  // Corre una sola vez mientras el mapa vive, no uno por marcador.
+  useEffect(() => {
+    if (!mapLoaded) return;
+
+    const frame = (now) => {
+      Object.values(markers.current).forEach((entry) => {
+        // Posición: avance lineal, que es lo que corresponde a velocidad constante
+        if (entry.duration > 0) {
+          const t = Math.min(1, (now - entry.startTime) / entry.duration);
+
+          entry.current = {
+            lng: lerp(entry.from.lng, entry.target.lng, t),
+            lat: lerp(entry.from.lat, entry.target.lat, t),
+          };
+          entry.marker.setLngLat([entry.current.lng, entry.current.lat]);
+
+          if (t >= 1) entry.duration = 0;
+        }
+
+        // Rumbo: giro suave por el camino más corto (evita el barrido 350°→10°)
+        const delta = shortestAngleDelta(
+          entry.currentHeading,
+          entry.targetHeading,
+        );
+        if (Math.abs(delta) > 0.1) {
+          // Se normaliza porque dar vueltas al circuito siempre en el mismo
+          // sentido acumularía grados sin fin (equivalente visualmente)
+          entry.currentHeading = (entry.currentHeading + delta * 0.15) % 360;
+          const rot = entry.el.querySelector(".marker-rotate");
+          if (rot) rot.style.transform = `rotate(${entry.currentHeading}deg)`;
+        }
+      });
+
+      rafId.current = requestAnimationFrame(frame);
+    };
+
+    rafId.current = requestAnimationFrame(frame);
+
+    return () => {
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    };
+  }, [mapLoaded]);
+
+  // Retirar marcadores al desmontar
+  useEffect(() => {
+    return () => {
+      Object.values(markers.current).forEach((entry) => {
+        try {
+          entry.marker.remove();
+        } catch {
+          /* el mapa ya fue destruido */
+        }
+      });
+      markers.current = {};
+    };
+  }, []);
 
   const handleRefresh = () => {
     dispatch(fetchGPSList());
